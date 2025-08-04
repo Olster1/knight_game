@@ -1,0 +1,31 @@
+{
+    "files.associations": {
+        "locale": "cpp",
+        "cmath": "cpp",
+        "__locale": "cpp",
+        "typeinfo": "cpp",
+        "ios": "cpp",
+        "__hash_table": "cpp",
+        "__tree": "cpp",
+        "array": "cpp",
+        "type_traits": "cpp",
+        "limits": "cpp",
+        "ratio": "cpp",
+        "tuple": "cpp",
+        "variant": "cpp",
+        "bitset": "cpp",
+        "render.c": "cpp",
+        "sstream": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "vector": "cpp",
+        "__node_handle": "cpp",
+        "optional": "cpp",
+        "map": "cpp",
+        "unordered_map": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "__bit_reference": "cpp",
+        "complex": "cpp"
+    }
+}

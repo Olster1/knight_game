@@ -1,0 +1,222 @@
+{
+id: "1725672200-1606012665-532901512"
+idHash: -60396269
+type: "ENTITY_PLAYER"
+pos: 7.910420 4.359909 10.000000
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 4.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 4.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 5.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 6.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 7.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 7.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 6.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 5.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 4.000000 -1.000000 0.000000
+tileMapId: 0 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 5.000000 -1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 6.000000 -1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 7.000000 -1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 8.000000 -1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 3.000000 0.000000 0.000000
+tileMapId: 0 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 9.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 8.000000 0.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 8.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 9.000000 1.000000 0.000000
+tileMapId: 1 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 9.000000 -1.000000 0.000000
+tileMapId: 2 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 3.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 4.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 5.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 6.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 7.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 8.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 9.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 2.000000 2.000000 0.000000
+tileMapId: 1 3
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 10.000000 2.000000 0.000000
+tileMapId: 1 0
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 10.000000 1.000000 0.000000
+tileMapId: 2 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 7.000000 -2.000000 0.000000
+tileMapId: 1 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 5.000000 -2.000000 0.000000
+tileMapId: 0 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 8.000000 -2.000000 0.000000
+tileMapId: 2 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 6.000000 -2.000000 0.000000
+tileMapId: 1 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 10.000000 0.000000 0.000000
+tileMapId: 2 2
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 3.000000 1.000000 0.000000
+tileMapId: 0 1
+}
+{
+type: "ENTITY_TILE_MAP"
+tileType: "TILE_SET_SWAMP"
+pos: 11.000000 2.000000 0.000000
+tileMapId: 3 3
+}

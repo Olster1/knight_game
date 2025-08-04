@@ -1,0 +1,1 @@
+static bool DEBUG_global_ProfilePaused = true; //this has to start as true
