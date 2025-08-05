@@ -153,10 +153,15 @@ typedef struct {
 	DefaultEntityAnimations barrellAnimations;
 
 	DefaultEntityAnimations manAnimations;
-	DefaultEntityAnimations treeAnimations;
+	DefaultEntityAnimations ashTreeAnimations[4];
+	DefaultEntityAnimations alderTreeAnimations[2];
 	DefaultEntityAnimations templerKnightAnimations;
 
-	Texture smokeTexture;
+	Texture smokeTextures[5];
+	Texture splatTexture;
+
+	DamageSplat *damageSplats;
+	DamageSplat *freeListDamageSplats;
 
 	Texture goblinHutTexture;
 	Animation goblinHutAnimation;

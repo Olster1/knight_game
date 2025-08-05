@@ -108,7 +108,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 		
 		{
 			DEBUG_TIME_BLOCK_NAMED("LOAD TEXTURES");
-			gameState->textureAtlas = readTextureAtlas("../src/images/texture_atlas.json", "../src/images/texture_atlas.png");
+			// gameState->textureAtlas = readTextureAtlas("../src/images/texture_atlas.json", "../src/images/texture_atlas.png");
 			gameState->bannerTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/banner.png");
 			gameState->selectTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/select.png");
 			gameState->shadowUiTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/shadow.png");
@@ -117,25 +117,48 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->blueText = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/b.png");
 			gameState->redText = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/r.png");
 			gameState->selectImage = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/ui/select.png");
-			gameState->cloudText[0] = textureAtlas_getItem(&gameState->textureAtlas, "cloud.png");
-			gameState->cloudText[1] = textureAtlas_getItem(&gameState->textureAtlas, "cloud2.png");
-			gameState->cloudText[2] = textureAtlas_getItem(&gameState->textureAtlas, "cloud3.png");
-			gameState->treeTexture = textureAtlas_getItemAsTexture(&gameState->textureAtlas, "tree.png");
+			// gameState->cloudText[0] = textureAtlas_getItem(&gameState->textureAtlas, "cloud.png");
+			// gameState->cloudText[1] = textureAtlas_getItem(&gameState->textureAtlas, "cloud2.png");
+			// gameState->cloudText[2] = textureAtlas_getItem(&gameState->textureAtlas, "cloud3.png");
+			// gameState->treeTexture = textureAtlas_getItemAsTexture(&gameState->textureAtlas, "tree.png");
 			// gameState->smokeTexture =  textureAtlas_getItemAsTexture(&gameState->textureAtlas, "flame.png");
 			// gameState->smokeTexture =  textureAtlas_getItemAsTexture(&gameState->textureAtlas, "flame.png");
-			gameState->smokeTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/whitePuff04.png");
+			gameState->smokeTextures[0] = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/puffs/puff1.png");
+			gameState->smokeTextures[1] = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/puffs/puff2.png");
+			gameState->smokeTextures[2] = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/puffs/puff3.png");
+			gameState->smokeTextures[3] = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/puffs/puff4.png");
+			gameState->smokeTextures[4] = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/puffs/puff5.png");
 
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/background.png");
+			gameState->splatTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/splat.png");
 
 
-			loadImageStrip(&gameState->animationState.waterRocks[0], backendRenderer, "../src/images/Rocks_03.png", 128);
-			loadImageStrip(&gameState->animationState.waterAnimation, backendRenderer, "../src/images/foam.png", 192);
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../src/images/entities/man.png", 32, 72, 1, 0, 0);
 
-			loadImageStripXY(&gameState->treeAnimations.idle, backendRenderer, "../src/images/entities/tree.png", 104, 162, 1, 0, 0);
-			loadImageStripXY(&gameState->treeAnimations.dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
-			loadImageStripXY(&gameState->treeAnimations.fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[0].idle, backendRenderer, "../src/images/entities/alder/alder.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[0].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[0].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+
+			loadImageStripXY(&gameState->alderTreeAnimations[1].idle, backendRenderer, "../src/images/entities/alder/alder2.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[1].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[1].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+
+			loadImageStripXY(&gameState->ashTreeAnimations[0].idle, backendRenderer, "../src/images/entities/ash/ash1.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[0].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[0].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+
+			loadImageStripXY(&gameState->ashTreeAnimations[1].idle, backendRenderer, "../src/images/entities/ash/ash2.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[1].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[1].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+
+			loadImageStripXY(&gameState->ashTreeAnimations[2].idle, backendRenderer, "../src/images/entities/ash/ash3.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[2].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[2].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
+
+			loadImageStripXY(&gameState->ashTreeAnimations[3].idle, backendRenderer, "../src/images/entities/ash/ash4.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[3].dead, backendRenderer, "../src/images/entities/tree stump.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->ashTreeAnimations[3].fallen, backendRenderer, "../src/images/entities/fallentree.png", 162, 104, 1, 0, 0);
 
 			loadImageStripXY(&gameState->templerKnightAnimations.idle, backendRenderer, "../src/images/entities/knight.png", 32, 72, 1, 0, 0);
 
@@ -153,13 +176,13 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 	// DefaultEntityAnimations barrellAnimations;
 
 		/////////////
-		{
-			int tileCount = 0;
-			int countX = 0;
-			int countY = 0;
-			Texture ** tiles = loadTileSet(backendRenderer, "../src/images/tilemap.png", 64, 64, &global_long_term_arena, &tileCount, &countX, &countY);
-			gameState->sandTileSet = buildTileSet(tiles, tileCount, TILE_SET_SAND, countX, countY, 64, 64);
-		}
+		// {
+		// 	int tileCount = 0;
+		// 	int countX = 0;
+		// 	int countY = 0;
+		// 	Texture ** tiles = loadTileSet(backendRenderer, "../src/images/tilemap.png", 64, 64, &global_long_term_arena, &tileCount, &countX, &countY);
+		// 	gameState->sandTileSet = buildTileSet(tiles, tileCount, TILE_SET_SAND, countX, countY, 64, 64);
+		// }
 
 	#if DEBUG_BUILD
 		DEBUG_runUnitTests(gameState);

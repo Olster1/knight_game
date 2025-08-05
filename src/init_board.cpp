@@ -13,7 +13,7 @@ float3 getSafeSpawnLocation(GameState *gameState, float3 offset, int pWidth, int
         for(int chunkX = 0; chunkX < maxChunkSearch && searching; chunkX++) {
             for(int currentMapHeight = 1; currentMapHeight <= 2; currentMapHeight++) {
                 float2 chunkP = make_float2(chunkX + chunkOffset.x, chunkY + chunkOffset.y);
-                Chunk *c = gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState,  &gameState->textureAtlas,chunkP.x, chunkP.y, 0, true, true, &globalPerFrameArena);
+                Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState,  &gameState->textureAtlas,chunkP.x, chunkP.y, 0, true, true, &globalPerFrameArena);
                 if(c) { 
                     float3 chunkWorldP = getChunkWorldP(c);
                     for(int localY = 0; localY < (CHUNK_DIM - pHeight)  && searching; localY++) {
@@ -71,7 +71,7 @@ void markTileAsUsed(GameState *gameState, float3 boardP, bool markUnWalkable = f
     addBoardPosToAverage(gameState, boardP);
      //NOTE: Now say we've used this cell up
      float2 chunkP = getChunkPosForWorldP(boardP.xy);
-     Chunk *c = gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState,  &gameState->textureAtlas,chunkP.x, chunkP.y, 0, true, true);
+     Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState,  &gameState->textureAtlas,chunkP.x, chunkP.y, 0, true, true);
 
      float3 localP = getChunkLocalPos(boardP.x, boardP.y, boardP.z);
 
@@ -379,14 +379,13 @@ void initPlayerBoard(GameState *gameState) {
     float3 p = make_float3(-CHUNK_DIM, -CHUNK_DIM, 0);
 
     addManEntity(gameState, p);
-    addTreeEntity(gameState, p);
     addTemplerKnightEntity(gameState, plus_float3(p, make_float3(10, 0, 0)));
 
 
     int startBoardSize = 10;
     for(int x = -startBoardSize; x < startBoardSize; ++x) {
         for(int y = -startBoardSize; y < startBoardSize; ++y) {
-            gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, true);
+            getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, true);
         }
     }
 

@@ -9,7 +9,7 @@ void pushOnFloodFillQueue(GameState *gameState, FloodFillEvent *queue, bool *vis
 	if(index >= 0 && index < MAX_ASTAR_ARRAY_LENGTH && !visited[index]) { 
 		//NOTE: Now check if it's a valid square to stand on i.e. not water or tree or house etc.
 		float2 chunkP = getChunkPosForWorldP(make_float2(x, y));
-        Chunk *c = gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y, 0, false, false);
+        Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y, 0, false, false);
 		if(c) {
 			float3 tileP = getChunkLocalPos(x, y, z);
 			Tile *tile = c->getTile(tileP.x, tileP.y, tileP.z);

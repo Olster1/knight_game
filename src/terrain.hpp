@@ -223,8 +223,6 @@ struct Terrain {
     }
 
     Chunk *generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *tempArena);
-    void fillChunk(LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, Chunk *chunk);
-    Chunk *getChunk(LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, int x, int y, int z, bool shouldGenerateChunk = true, bool shouldGenerateFully = true, Memory_Arena *tempArena = 0);
        
 };
 

@@ -1,20 +1,3 @@
-Chunk *Terrain::generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *tempArena) {
-    DEBUG_TIME_BLOCK()
-    Chunk *chunk = (Chunk *)pushStruct(&global_long_term_arena, Chunk);
-    *chunk = Chunk(tempArena);
-    assert(chunk);
-
-    chunk->x = x;
-    chunk->y = y;
-    chunk->z = z;
-    chunk->generateState = CHUNK_NOT_GENERATED;
-
-    chunk->next = chunks[hash];
-    chunks[hash] = chunk;
-
-    return chunk;
-}
-
 struct CubeVertex {
     float3 pos;
     float3 normal;
@@ -156,18 +139,47 @@ bool hasDecorBush(int worldX, int worldY, int worldZ) {
     return result;
 }
 
-bool hasTree(int worldX, int worldY, int worldZ) {
+bool hasAshTree(int worldX, int worldY) {
+    DEBUG_TIME_BLOCK()
+    bool result = false;
+
+    int marginInVoxels = 6;
+    int totalMarginForBothSides = marginInVoxels*2;
+    
+    float3 cellSize = make_float3(totalMarginForBothSides, totalMarginForBothSides, totalMarginForBothSides);
+    float3 worldVoxelP = make_float3((int)(worldX), (int)(worldY), 0);
+
+    int cellX = ((int)worldVoxelP.x / (int)cellSize.x);
+    int cellY = ((int)worldVoxelP.y / (int)cellSize.y);
+
+    float t0 = SimplexNoise_fractal_1d(8, cellX, 0.1);
+    t0 = mapSimplexNoiseTo01(t0);
+    int xOffset = (int)lerp(-marginInVoxels, marginInVoxels, make_lerpTValue(t0));
+
+    float t1 = SimplexNoise_fractal_1d(8,cellY, 0.1);
+    t1 = mapSimplexNoiseTo01(t1);
+
+    int yOffset = (int)lerp(-marginInVoxels, marginInVoxels, make_lerpTValue(t1));
+
+    float3 cellTargetP = make_float3(xOffset, yOffset, 0);
+    int remainderX_centerBased = (worldVoxelP.x - (cellX * cellSize.x));
+    int remainderY_centerBased = (worldVoxelP.y - (cellY * cellSize.y));
+
+    if(remainderX_centerBased == (int)cellTargetP.x && remainderY_centerBased == (int)cellTargetP.y) {
+        float prob = SimplexNoise_fractal_2d(16, worldX, worldY, 10);
+        if(prob > 0.3f) {
+            result = true;
+        }
+    }
+
+    return result;
+}
+
+bool hasAlderTree(int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
     float scaleFactor = 1.0f;
-    float perlin = mapSimplexNoiseTo01(SimplexNoise_fractal_2d(8, scaleFactor*worldX, scaleFactor*worldY, 10.f));
-    bool result = perlin > 0.7f;
-
-    float mapHeight = getMapHeight(worldX, worldY);
-
-    //NOTE: Only on the top
-    if(worldZ != mapHeight) {
-        result = false;
-    }
+    float perlin = mapSimplexNoiseTo01(SimplexNoise_fractal_2d(8, scaleFactor*worldX, scaleFactor*worldY, 100.0f));
+    bool result = perlin > 0.9f;
 
     return result;
 }
@@ -183,45 +195,28 @@ bool isWaterRock(int worldX, int worldY, int worldZ) {
     return result;
 }
 
-static TileMapCoords global_tileLookup[16] = {
-    {3, 3}, // 0000 - No beach tiles
-    {3, 2}, // 0001 - Top
-    {3, 0}, // 0010 - Bottom
-    {3, 1}, // 0011 - Top & Bottom
-    {0, 3}, // 0100 - Right
-    {0, 2}, // 0101 - Top & Right
-    {0, 0}, // 0110 - Bottom & Right
-    {0, 1}, // 0111 - Top, Bottom, Right
-    {2, 3}, // 1000 - Left
-    {2, 2}, // 1001 - Top & Left
-    {2, 0}, // 1010 - Bottom & Left
-    {2, 1}, // 1011 - Top, Bottom, Left
-    {1, 3}, // 1100 - Left & Right
-    {1, 2}, // 1101 - Top, Right, Left
-    {1, 0}, // 1110 - Bottom, Right, Left
-    {1, 1}  // 1111 - Surrounded by beach tiles
-};
+Chunk *Terrain::generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *tempArena) {
+    DEBUG_TIME_BLOCK()
+    Chunk *chunk = (Chunk *)pushStruct(&global_long_term_arena, Chunk);
+    *chunk = Chunk(tempArena);
+    assert(chunk);
+    assert(!chunk->generatedMipMaps);
 
-static TileMapCoords global_tileLookup_elevated[16] = {
-    {3, 4}, // 0000 - No beach tiles
-    {3, 2}, // 0001 - Top
-    {3, 0}, // 0010 - Bottom
-    {3, 1}, // 0011 - Top & Bottom
-    {0, 4}, // 0100 - Right
-    {0, 2}, // 0101 - Top & Right
-    {0, 0}, // 0110 - Bottom & Right
-    {0, 1}, // 0111 - Top, Bottom, Right
-    {2, 4}, // 1000 - Left
-    {2, 2}, // 1001 - Top & Left
-    {2, 0}, // 1010 - Bottom & Left
-    {2, 1}, // 1011 - Top, Bottom, Left
-    {1, 4}, // 1100 - Left & Right
-    {1, 2}, // 1101 - Top, Right, Left
-    {1, 0}, // 1110 - Bottom, Right, Left
-    {1, 1}  // 1111 - Surrounded by beach tiles
-};
+    chunk->x = x;
+    chunk->y = y;
+    chunk->z = z;
+    chunk->generateState = CHUNK_NOT_GENERATED;
 
-void Terrain::fillChunk(LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, Chunk *chunk) {
+    chunk->next = chunks[hash];
+    chunks[hash] = chunk;
+
+    return chunk;
+}
+
+Entity *addAshTreeEntity(GameState *state, float3 worldP);
+Entity *addAlderTreeEntity(GameState *state, float3 worldP);
+
+void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, Chunk *chunk) {
     DEBUG_TIME_BLOCK()
     assert(chunk);
     assert(chunk->generateState & CHUNK_NOT_GENERATED);
@@ -229,19 +224,26 @@ void Terrain::fillChunk(LightingOffsets *lightingOffsets, AnimationState *animat
 
     chunk->cloudFadeTimer = 0; //NOTE: for fading out the fog of war
 
-    // float3 chunkP = getChunkWorldP(chunk);
-    // int chunkWorldX = roundChunkCoord(chunkP.x);
-    // int chunkWorldY = roundChunkCoord(chunkP.y);
-    // int chunkWorldZ = roundChunkCoord(chunkP.z);
+    float3 chunkP = getChunkWorldP(chunk);
+    int chunkWorldX = roundChunkCoord(chunkP.x);
+    int chunkWorldY = roundChunkCoord(chunkP.y);
+    int chunkWorldZ = roundChunkCoord(chunkP.z);
 
     // char *decorNames[] = {"bush1.png", "bush2.png", "bush4.png", "bush5.png",};
       
-    // for(int z = 0; z < CHUNK_DIM; ++z) {
-    //     for(int y = 0; y < CHUNK_DIM; ++y) {
-    //         for(int x = 0; x < CHUNK_DIM; ++x) {
-    //             int worldX = chunkWorldX + x;
-    //             int worldY = chunkWorldY + y;
-    //             int worldZ = chunkWorldZ + z;
+    for(int y = 0; y < CHUNK_DIM; ++y) {
+        for(int x = 0; x < CHUNK_DIM; ++x) {
+            int worldX = chunkWorldX + x;
+            int worldY = chunkWorldY + y;
+
+            if(hasAshTree(worldX, worldY)) {
+                addAshTreeEntity(gameState, make_float3(worldX, worldY, 0));
+            }
+
+             if(hasAlderTree(worldX, worldY)) {
+                addAlderTreeEntity(gameState, make_float3(worldX, worldY, 0));
+            }
+
 
     //             TileType type = getLandscapeValue(worldX, worldY, worldZ);
 
@@ -366,20 +368,19 @@ void Terrain::fillChunk(LightingOffsets *lightingOffsets, AnimationState *animat
     //                     TileMapCoords tileCoordsSecondary = {};
     //                     chunk->tiles[z*CHUNK_DIM*CHUNK_DIM + y*CHUNK_DIM + x] = Tile(TILE_TYPE_WATER_ROCK, &animationState->animationItemFreeListPtr, &animationState->waterRocks[0], tileCoords, tileCoordsSecondary, 0, 0);
     //                 }
-    //             }
-    //         }
-    //     }
-    // }
+                // }
+            }
+        }
 
     chunk->generateState = CHUNK_GENERATED;
 
 }
 
-Chunk *Terrain::getChunk(LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, int x, int y, int z, bool shouldGenerateChunk, bool shouldGenerateFully, Memory_Arena *tempArena) {
+Chunk *getChunk(GameState *gameState, LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, int x, int y, int z, bool shouldGenerateChunk, bool shouldGenerateFully, Memory_Arena *tempArena = 0) {
     DEBUG_TIME_BLOCK()
     uint32_t hash = getHashForChunk(x, y, z);
 
-    Chunk *chunk = chunks[hash];
+    Chunk *chunk = gameState->terrain.chunks[hash];
 
     bool found = false;
 
@@ -392,12 +393,12 @@ Chunk *Terrain::getChunk(LightingOffsets *lightingOffsets, AnimationState *anima
     }
 
     if((!chunk && shouldGenerateChunk)) {
-        chunk = generateChunk(x, y, z, hash, tempArena);
+        chunk = gameState->terrain.generateChunk(x, y, z, hash, tempArena);
     }
 
     if(chunk && shouldGenerateFully && (chunk->generateState & CHUNK_NOT_GENERATED)) {
         //NOTE: Launches multi-thread work
-        fillChunk(lightingOffsets, animationState, textureAtlas, chunk);
+        fillChunk(gameState, lightingOffsets, animationState, textureAtlas, chunk);
     } 
 
     return chunk;

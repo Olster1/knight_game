@@ -26,6 +26,7 @@
         "queue": "cpp",
         "stack": "cpp",
         "__bit_reference": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "memory": "cpp"
     }
 }

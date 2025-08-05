@@ -6,7 +6,7 @@ void drawCloudsAsTexture(GameState *gameState, Renderer *renderer, float dt, flo
     int cloudDistance = 3;
     for(int y = cloudDistance; y >= -cloudDistance; --y) {
         for(int x = -cloudDistance; x <= cloudDistance; ++x) {
-            Chunk *c = gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, false);
+            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, false);
             if(c && (c->generateState == CHUNK_NOT_GENERATED || c->cloudFadeTimer >= 0)) {
                 float maxTime = 1.5f;
                 float chunkScale = CHUNK_DIM + CHUNK_DIM;

@@ -94,6 +94,13 @@ Collider make_collider(float3 offset, float3 scale, u32 flags) {
     return c;
 }
 
+struct DamageSplat {
+    int damage;
+    float3 worldP;
+    float timeAt;
+    DamageSplat *next;
+};
+
 struct DefaultEntityAnimations {
     Animation idle;
 	Animation run;
@@ -135,7 +142,8 @@ struct Entity {
     float3 velocity;
     float rotation;
     float targetRotation;
-    
+    int health;
+
     int maxMoveDistance;
     EntityMove *moves;
 

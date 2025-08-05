@@ -3,6 +3,7 @@ struct Particle {
     float3 dP;
     float lifeTime;
     bool alive;
+    Texture *imageHandle;
 };
 
 struct PariclePattern {
@@ -41,10 +42,11 @@ struct Particler {
     PariclePattern pattern;
     bool warmStart;
 
+    int maxTextureArrayCount;
+
     float3 spawnBox;
     float3 worldP;
-    TextureHandle *imageHandle;
-    float4 uvCoords;
+    Texture *imageHandles;
 
     u32 flags; //NOTE: These are entity flags 
 
@@ -66,7 +68,7 @@ void updateParticlerWorldPosition(Particler *p, float3 worldP) {
     p->worldP = worldP;
 }
 
-Particler initParticler(float lifespan, float spawnRate, float3 pos, float3 spawnBox, TextureHandle *imageHandle, float4 uvCoords, ParticlerId id) {
+Particler initParticler(float lifespan, float spawnRate, float3 pos, float3 spawnBox, Texture *imageHandles, int maxTextureArrayCount, ParticlerId id) {
     Particler p = {};
 
     p.count = 0;
@@ -75,12 +77,12 @@ Particler initParticler(float lifespan, float spawnRate, float3 pos, float3 spaw
     p.spawnRate = 1.0f / spawnRate;
     p.lastTimeCreation = 0;
     p.tAt = 0;
+    p.maxTextureArrayCount = maxTextureArrayCount;
     p.lifeAt = 0;
     p.indexAt = 0;
     p.worldP = pos;
     p.spawnBox = spawnBox;
-    p.imageHandle = imageHandle;
-    p.uvCoords = uvCoords;
+    p.imageHandles = imageHandles;
     p.id = id;
     p.warmStart = true;
 
@@ -145,6 +147,9 @@ bool updateParticler(Renderer *renderer, Particler *particler, float3 cameraPos,
             p->T.pos = make_float3(x, y, z);
             p->T.scale = make_float3(random_between_float(pattern.randomSize.x, pattern.randomSize.y), random_between_float(pattern.randomSize.x, pattern.randomSize.y), 0.1f);
 
+            int imageIndex = random_between_int(0, particler->maxTextureArrayCount);
+            p->imageHandle = &particler->imageHandles[imageIndex];
+
             p->dP = make_float3(random_between_float(-pattern.dpMargin, pattern.dpMargin), random_between_float(-pattern.dpMargin, pattern.dpMargin), pattern.speed); //NOTE: Straight up
             p->lifeTime = MAX_PARTICLE_LIFETIME; //Seconds
             p->alive = true;
@@ -206,7 +211,8 @@ bool updateParticler(Renderer *renderer, Particler *particler, float3 cameraPos,
             }
 
             //NOTE: Draw the particle
-            pushEntityTexture(renderer, particler->imageHandle, drawP, p->T.scale.xy, color, particler->uvCoords, getSortIndex(p->T.pos));
+            
+            pushEntityTexture(renderer, p->imageHandle->handle, drawP, p->T.scale.xy, color, p->imageHandle->uvCoords, getSortIndex(p->T.pos));
           
         } else {
             deadCount++;
@@ -231,12 +237,12 @@ struct ParticlerParent {
     Particler particlers[1024];
 };
 
-Particler *getNewParticleSystem(ParticlerParent *parent, float3 startP, TextureHandle *imageHandle, float3 spawnArea, float4 uvCoords, float spawnRatePerSecond) {
+Particler *getNewParticleSystem(ParticlerParent *parent, float3 startP, Texture *imageHandles, int maxTextureArrayCount, float3 spawnArea, float spawnRatePerSecond) {
     Particler *p = 0;
     assert(parent->particlerCount < arrayCount(parent->particlers));
     if(parent->particlerCount < arrayCount(parent->particlers)) {
         float lifespan = 0.1f; //NOTE: Seconds for the _particler_ not particles. Particle lifespan is set by MAX_PARTICLE_LIFESPAN
-        parent->particlers[parent->particlerCount++] = initParticler(lifespan, spawnRatePerSecond, startP, spawnArea, imageHandle, uvCoords, makeParticlerId(global_particleId++));
+        parent->particlers[parent->particlerCount++] = initParticler(lifespan, spawnRatePerSecond, startP, spawnArea, imageHandles, maxTextureArrayCount, makeParticlerId(global_particleId++));
         p = &parent->particlers[parent->particlerCount - 1];
         
     }

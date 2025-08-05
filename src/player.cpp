@@ -59,7 +59,11 @@ void updatePlayerInput(GameState *gameState) {
 	}
 
 	impluse = normalize_float2(impluse);
-	impluse = scale_float2(gameState->player->speed, impluse); 
+	float speed = gameState->player->speed;
+	if(global_platformInput.keyStates[PLATFORM_KEY_SHIFT].isDown) {
+		speed *= 3;
+	}
+	impluse = scale_float2(speed, impluse); 
 
 	gameState->player->velocity.xy = plus_float2(gameState->player->velocity.xy, impluse);
 
