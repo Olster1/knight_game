@@ -376,13 +376,13 @@ void initPlayerBoard(GameState *gameState) {
     
     MemoryArenaMark mark = takeMemoryMark(&globalPerFrameArena);
 
-    float3 p = make_float3(-CHUNK_DIM, -CHUNK_DIM, 0);
+    float3 p = make_float3(0, 0, 0);
 
     addManEntity(gameState, p);
-    addTemplerKnightEntity(gameState, plus_float3(p, make_float3(10, 0, 0)));
+    addTemplerKnightEntity(gameState, plus_float3(p, make_float3(10, -3, 0)));
 
 
-    int startBoardSize = 10;
+    int startBoardSize = 2;
     for(int x = -startBoardSize; x < startBoardSize; ++x) {
         for(int y = -startBoardSize; y < startBoardSize; ++y) {
             getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, true);

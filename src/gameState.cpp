@@ -88,7 +88,10 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 		gameState->shakeTimer = -1;//NOTE: Turn the timer off
 
-		srand(time(NULL));   // Initialization, should only be called once.
+		//Non-determnistic
+		// srand(time(NULL));   // Initialization, should only be called once.
+		//determnistic
+		srand(1);   // Initialization, should only be called once.
 
 		//NOTE: Used to build the entity ids 
 		gameState->randomIdStartApp = rand();

@@ -5,36 +5,40 @@ void treeDie(GameState *gameState, Entity *attackEntity) {
     easyAnimation_addAnimationToController(&attackEntity->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->dead, 0.08f);
 
     Entity *newTree = addAshTreeEntity(gameState, plus_float3(make_float3(4, -1, 0), attackEntity->pos));
-    easyAnimation_emptyAnimationContoller(&newTree->animationController, &gameState->animationState.animationItemFreeListPtr);
-    easyAnimation_addAnimationToController(&newTree->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->fallen, 0.08f);
-    float temp = newTree->scale.x;
-    float bigger = 1.2f;
-    newTree->scale.x = bigger*newTree->scale.y;
-    newTree->scale.y = bigger*temp;
-    newTree->sortYOffset = 0.5f;
-    newTree->offsetP.y = 0;
+    if(newTree) {
+        easyAnimation_emptyAnimationContoller(&newTree->animationController, &gameState->animationState.animationItemFreeListPtr);
+        easyAnimation_addAnimationToController(&newTree->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->fallen, 0.08f);
+        float temp = newTree->scale.x;
+        float bigger = 1.2f;
+        newTree->scale.x = bigger*newTree->scale.y;
+        newTree->scale.y = bigger*temp;
+        newTree->sortYOffset = 0.5f;
+        newTree->offsetP.y = 0;
 
-    int pEntIndex = getNewOrReuseParticler(newTree, ENTITY_SELECTED, &gameState->particlers);
-    if(pEntIndex >= 0) {
-        float3 particleP = newTree->pos;
+        int pEntIndex = getNewOrReuseParticler(newTree, ENTITY_SELECTED, &gameState->particlers);
+        if(pEntIndex >= 0) {
+            float3 particleP = newTree->pos;
 
-        float3 spawnMargin = make_float3(0.8f*newTree->scale.x, 0.4f, 1);
-        Particler *p = getNewParticleSystem(&gameState->particlers, particleP, gameState->smokeTextures, arrayCount(gameState->smokeTextures), spawnMargin, 20);
-        
-        if(p) {
-            p->lifespan = 0.3f;
-            addColorToParticler(p, make_float4(1, 1, 1, 1.0));
-            addColorToParticler(p, make_float4(1, 1, 1, 0.0));
+            float3 spawnMargin = make_float3(0.8f*newTree->scale.x, 0.4f, 1);
+            Particler *p = getNewParticleSystem(&gameState->particlers, particleP, gameState->smokeTextures, arrayCount(gameState->smokeTextures), spawnMargin, 20);
+            
+            if(p) {
+                p->lifespan = 0.3f;
+                addColorToParticler(p, make_float4(1, 1, 1, 1.0));
+                addColorToParticler(p, make_float4(1, 1, 1, 0.0));
 
-            p->pattern.randomSize = make_float2(1.0f, 2.5f);
-            p->pattern.dpMargin = 0.8f;
-            p->pattern.speed = 4.3f;
+                p->pattern.randomSize = make_float2(1.0f, 2.5f);
+                p->pattern.dpMargin = 0.8f;
+                p->pattern.speed = 4.3f;
 
-            p->flags |= ENTITY_SELECTED; //NOTE: Tag it as a 'fire' particle system to check in the entity update code
+                p->flags |= ENTITY_SELECTED; //NOTE: Tag it as a 'fire' particle system to check in the entity update code
 
-            newTree->particlers[pEntIndex] = p;
-            newTree->particlerIds[pEntIndex] = p->id;
+                newTree->particlers[pEntIndex] = p;
+                newTree->particlerIds[pEntIndex] = p->id;
+            }
         }
+    } else {
+        assert(false);
     }
 }
                         

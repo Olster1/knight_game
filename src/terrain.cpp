@@ -139,47 +139,48 @@ bool hasDecorBush(int worldX, int worldY, int worldZ) {
     return result;
 }
 
-bool hasAshTree(int worldX, int worldY) {
-    DEBUG_TIME_BLOCK()
-    bool result = false;
+bool isCellPosition(int worldX, int worldY, int marginInVoxels) {
+     bool result = false;
 
-    int marginInVoxels = 6;
     int totalMarginForBothSides = marginInVoxels*2;
     
     float3 cellSize = make_float3(totalMarginForBothSides, totalMarginForBothSides, totalMarginForBothSides);
     float3 worldVoxelP = make_float3((int)(worldX), (int)(worldY), 0);
 
-    int cellX = ((int)worldVoxelP.x / (int)cellSize.x);
-    int cellY = ((int)worldVoxelP.y / (int)cellSize.y);
+    int cellX = roundChunkCoord((float)worldVoxelP.x / (float)cellSize.x);
+    int cellY = roundChunkCoord((float)worldVoxelP.y / (float)cellSize.y);
 
-    float t0 = SimplexNoise_fractal_1d(8, cellX, 0.1);
-    t0 = mapSimplexNoiseTo01(t0);
-    int xOffset = (int)lerp(-marginInVoxels, marginInVoxels, make_lerpTValue(t0));
+    // float t0 = SimplexNoise_fractal_1d(32, cellX, 0.01);
+    // t0 = mapSimplexNoiseTo01(t0);
+    // int xOffset = (int)lerp(0, 2*totalMarginForBothSides, make_lerpTValue(t0));
+    int xOffset = random_between_int(0, totalMarginForBothSides);
 
-    float t1 = SimplexNoise_fractal_1d(8,cellY, 0.1);
-    t1 = mapSimplexNoiseTo01(t1);
+    // float t1 = SimplexNoise_fractal_1d(32, cellY, 0.01);
+    // t1 = mapSimplexNoiseTo01(t1);
 
-    int yOffset = (int)lerp(-marginInVoxels, marginInVoxels, make_lerpTValue(t1));
-
+    // int yOffset = (int)lerp(0, 2*totalMarginForBothSides, make_lerpTValue(t1));
+    int yOffset = random_between_int(0, totalMarginForBothSides);
+    
     float3 cellTargetP = make_float3(xOffset, yOffset, 0);
     int remainderX_centerBased = (worldVoxelP.x - (cellX * cellSize.x));
     int remainderY_centerBased = (worldVoxelP.y - (cellY * cellSize.y));
 
     if(remainderX_centerBased == (int)cellTargetP.x && remainderY_centerBased == (int)cellTargetP.y) {
-        float prob = SimplexNoise_fractal_2d(16, worldX, worldY, 10);
-        if(prob > 0.3f) {
-            result = true;
-        }
+        result = true;
     }
+    return result;
+}
 
+bool hasAshTree(int worldX, int worldY) {
+    DEBUG_TIME_BLOCK()
+    bool result = isCellPosition(worldX, worldY, 4);
     return result;
 }
 
 bool hasAlderTree(int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
-    float scaleFactor = 1.0f;
-    float perlin = mapSimplexNoiseTo01(SimplexNoise_fractal_2d(8, scaleFactor*worldX, scaleFactor*worldY, 100.0f));
-    bool result = perlin > 0.9f;
+    bool result = isCellPosition(worldX, worldY, 6);
+    return result;
 
     return result;
 }

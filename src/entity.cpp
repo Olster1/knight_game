@@ -85,7 +85,7 @@ float16 getModelToViewTransform(Entity *e_, float3 cameraPos) {
 
 void markBoardAsEntityOccupied(GameState *gameState, float3 worldP) {
     float2 chunkP = getChunkPosForWorldP(worldP.xy);
-    Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y, 0, true, true);
+    Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y, 0, true, false);
     if(c) {
         float3 localP = getChunkLocalPos(worldP.x, worldP.y, worldP.z);
         Tile *tile = c->getTile(localP.x, localP.y, localP.z);
@@ -285,7 +285,7 @@ Entity *addTemplerKnightEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_TEMPLER_KNIGHT;
-        e->flags |= ENTITY_CAN_WALK;
+        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT;
         e->offsetP.y = 0.16; //NOTE: Fraction of the scale
         e->scale = make_float3(1.32f, 3.0f, 1);
         easyAnimation_initController(&e->animationController);

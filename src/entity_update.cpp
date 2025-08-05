@@ -213,7 +213,7 @@ void renderTileMap(GameState *gameState, Renderer *renderer, float16 fovMatrix, 
     DEBUG_TIME_BLOCK();
 
     //NOTE: Draw the tile map
-    int renderDistance = 3;
+    int renderDistance = RENDER_DISTANCE;
     float2 cameraBlockP = getChunkPosForWorldP(gameState->cameraPos.xy);
     float2 offset = gameState->cameraPos.xy;
 	offset.x /= CHUNK_DIM;
@@ -309,9 +309,10 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
 
     float3 p = getWorldPosition(e);
     
-    {
+    if(e->type & ENTITY_MAN) {
         float2 chunkP =  getChunkPosForWorldP(p.xy);
         float3 localP = getChunkLocalPos(p.x, p.y, p.z);
+        
 
         int margin = CHUNK_REVEAL_MARGIN;
 
@@ -344,18 +345,21 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
             {
                 gameState->selectedEntityIds[i] = gameState->selectedEntityIds[--gameState->selectedEntityCount];
 
-				float damage = 3;
+				float damage = random_between_int(1, 4);
 				attackEntity->health -= damage;
 
-				DamageSplat *d = getDamageSplat(gameState);
+                if(attackEntity->flags & ENTITY_SHOW_DAMAGE_SPLAT) {
 
-				if(d) {
-					d->damage = damage;
-					d->worldP = attackEntity->pos;
-					
-					d->worldP.y += random_between_float(1, 2);
-					d->worldP.x += random_between_float(-0.8, 0.8);
-				}
+                    DamageSplat *d = getDamageSplat(gameState);
+
+                    if(d) {
+                        d->damage = damage;
+                        d->worldP = attackEntity->pos;
+                        
+                        d->worldP.y += random_between_float(1, 2);
+                        d->worldP.x += random_between_float(-0.8, 0.8);
+                    }
+                }
 
 				if(attackEntity->health <= 0) {
 
