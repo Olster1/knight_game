@@ -8,13 +8,28 @@ enum EntityFlag {
     ENTITY_CAN_WALK = 1 << 5, //NOTE: For entities that can walk around like the peasant, knight, etc.
     ENTITY_SELECTED = 1 << 6, //NOTE: Whether entity is selected
     ENTITY_SHOW_DAMAGE_SPLAT = 1 << 7,
+    ENTITY_ATTACK_PLAYER = 1 << 8,
+    ENTITY_CAN_BE_ATTACKED = 1 << 9,
 };
+
+#define MY_PICKUP_ITEM_TYPE(FUNC) \
+FUNC(PICKUP_ITEM_NONE)\
+FUNC(PICKUP_ITEM_BEAR_PELT)\
+
+typedef enum {
+    MY_PICKUP_ITEM_TYPE(ENUM)
+} PickupItemType;
+
+static char *MyPickupItem_TypeStrings[] = { MY_PICKUP_ITEM_TYPE(STRING) };
+
 
 #define MY_ENTITY_TYPE(FUNC) \
 FUNC(ENTITY_PEASANT)\
+FUNC(ENTITY_PICKUP_ITEM)\
 FUNC(ENTITY_ARCHER)\
 FUNC(ENTITY_KNIGHT)\
 FUNC(ENTITY_MAN)\
+FUNC(ENTITY_BEAR)\
 FUNC(ENTITY_TREE)\
 FUNC(ENTITY_TEMPLER_KNIGHT)\
 FUNC(ENTITY_GOBLIN)\
@@ -97,7 +112,6 @@ Collider make_collider(float3 offset, float3 scale, u32 flags) {
 
 struct DamageSplat {
     int damage;
-    float3 worldP;
     float timeAt;
     DamageSplat *next;
 };
@@ -120,6 +134,10 @@ struct DefaultEntityAnimations {
     //NOTE: For the tree
     Animation fallen;
     Animation dead;
+
+    //NOTE: For the bear
+    Animation skinned;
+    Animation skeleton;
 };
 
 struct EntityMove {
@@ -136,6 +154,7 @@ struct Entity {
 
     //NOTE: TRANSFORM component
     float3 pos;
+    float3 spawnPosition; //NOTE: Used to decide wether to stop trying to get the player
     float3 offsetP;
     float sortYOffset;
     float speed; //NOTE: How fast the entity moves - used to scale direction vectors
@@ -144,9 +163,17 @@ struct Entity {
     float rotation;
     float targetRotation;
     int health;
+    float homeDistance;
+    float attackCooldown;
+    float skeletonCountdown;
 
     int maxMoveDistance;
     EntityMove *moves;
+
+    DamageSplat *damageSplats;
+
+    PickupItemType pickupItemType;
+
 
     float perlinNoiseLight; //NOTE: Used for the lights
 

@@ -222,7 +222,7 @@ void renderTileMap(GameState *gameState, Renderer *renderer, float16 fovMatrix, 
     pushShader(renderer, &pixelArtShader);
     for(int y_ = renderDistance; y_ >= -renderDistance; --y_) {
         for(int x_ = -renderDistance; x_ <= renderDistance; ++x_) {
-            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x_ + offset.x, y_ + offset.y, 0, true, false);
+            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x_ + offset.x, y_ + offset.y, 0, true, true);
             if(c) {
                 float2 chunkScale = make_float2(CHUNK_DIM, CHUNK_DIM);
                 // if(c->texture.textureHandle && c->texture.textureHandle->handle > 0) 
@@ -305,79 +305,96 @@ static float3 roundToGridBoard(float3 in, float tileSize) {
 
 void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt, float3 mouseWorldP) {
     DEBUG_TIME_BLOCK();
+    if(!(e->flags & ENTITY_ACTIVE)) {
+        return;
+    }
     bool clicked = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0;
 
-    float3 p = getWorldPosition(e);
-    
-    if(e->type & ENTITY_MAN) {
-        float2 chunkP =  getChunkPosForWorldP(p.xy);
-        float3 localP = getChunkLocalPos(p.x, p.y, p.z);
-        
+    refreshParticlers(gameState, e);
 
-        int margin = CHUNK_REVEAL_MARGIN;
+    if(e->flags & ENTITY_ATTACK_PLAYER) {
+        if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->spawnPosition.xy)) < e->homeDistance) {
+            float2 impluse = normalize_float2(minus_float2(gameState->player->pos.xy, e->pos.xy));
+            impluse = scale_float2(e->speed, impluse); 
 
-        if(localP.x < margin) {
-            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x - 1, chunkP.y, 0, true, true);
-            assert(c);
+            e->velocity.xy = plus_float2(e->velocity.xy, impluse);
         }
-        if(localP.x >= (CHUNK_DIM - margin)) {
-            // float2 chunkP =  getChunkPosForWorldP(p.xy);
-            // float3 localP = getChunkLocalPos(p.x, p.y, p.z);
-            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x + 1, chunkP.y, 0, true, true);
-            assert(c);
+
+        if(e->attackCooldown > 0) {
+            e->attackCooldown -= dt;
         }
-        if(localP.y < margin) {
-            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y - 1, 0, true, true);
-            assert(c);
-        }
-        if(localP.y >= (CHUNK_DIM - margin)) {
-            Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y + 1, 0, true, true);
-            assert(c);
+
+        if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->pos.xy)) < 1 && e->attackCooldown <= 0) {
+            float damage = random_between_int(1, 4);
+            gameState->player->health -= damage;
+
+            DamageSplat *d = getDamageSplat(gameState, gameState->player);
+
+            if(d) {
+                d->damage = damage;
+            }
+
+            e->attackCooldown = 1;
         }
     }
 
-    refreshParticlers(gameState, e);
+    if(e->skeletonCountdown > 0) {
+        e->skeletonCountdown -= dt;
+        if(e->skeletonCountdown <= 0 && easyAnimation_animationHasFrames(&e->animations->skeleton)) {
+            easyAnimation_emptyAnimationContoller(&e->animationController, &gameState->animationState.animationItemFreeListPtr);
+            easyAnimation_addAnimationToController(&e->animationController, &gameState->animationState.animationItemFreeListPtr, &e->animations->skeleton, 0.08f);
+        }
+    }
 
     if(e->type & ENTITY_MAN) {
         for(int i = 0; i < gameState->selectedEntityCount; ++i) {
             Entity *attackEntity = gameState->selectedEntityIds[i].e;
-            if(easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->idle)) 
-            {
-                gameState->selectedEntityIds[i] = gameState->selectedEntityIds[--gameState->selectedEntityCount];
+            
+            if(attackEntity->pickupItemType == PICKUP_ITEM_BEAR_PELT) {
+                
+                bool success = addToInventory(&gameState->inventory, attackEntity->pickupItemType);
 
-				float damage = random_between_int(1, 4);
-				attackEntity->health -= damage;
+                if(success) {
+                    attackEntity->flags &= ~ENTITY_ACTIVE;
+                }
+            }
+
+            if((attackEntity->type == ENTITY_BEAR)  && easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->dead)) {
+                easyAnimation_emptyAnimationContoller(&attackEntity->animationController, &gameState->animationState.animationItemFreeListPtr);
+                easyAnimation_addAnimationToController(&attackEntity->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->skinned, 0.08f);
+
+                bool success = addToInventory(&gameState->inventory, PICKUP_ITEM_BEAR_PELT);
+                
+            }
+
+            if((attackEntity->flags & ENTITY_CAN_BE_ATTACKED) && easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->idle)) {
+
+                float damage = random_between_int(1, 4);
+                attackEntity->health -= damage;
 
                 if(attackEntity->flags & ENTITY_SHOW_DAMAGE_SPLAT) {
 
-                    DamageSplat *d = getDamageSplat(gameState);
+                    DamageSplat *d = getDamageSplat(gameState, attackEntity);
 
                     if(d) {
                         d->damage = damage;
-                        d->worldP = attackEntity->pos;
-                        
-                        d->worldP.y += random_between_float(1, 2);
-                        d->worldP.x += random_between_float(-0.8, 0.8);
                     }
                 }
 
-				if(attackEntity->health <= 0) {
+                if(attackEntity->health <= 0) {
 
                     if(attackEntity->type == ENTITY_TEMPLER_KNIGHT) {
                         templerKnightDie(gameState, attackEntity);
-                        
                     } else if(attackEntity->type == ENTITY_TREE) {
                         treeDie(gameState, attackEntity);
+                    } else if(attackEntity->type == ENTITY_BEAR) {
+                        bearDie(gameState, attackEntity);
                     }
                 }
-
-                break;
             }
         }
+        gameState->selectedEntityCount = 0;
     }
-
-    
-
 }
 
 
@@ -442,6 +459,8 @@ void renderEntity(GameState *gameState, Renderer *renderer, Entity *e, float16 f
 
         pushEntityTexture(renderer, t->handle, renderWorldP, e->scale.xy, color, t->uvCoords, getSortIndex(sortPos, RENDER_LAYER_3));
     }
+
+    renderDamageSplats(gameState, e, dt);
 }
 
 
@@ -622,10 +641,10 @@ void updateParticlers(Renderer *renderer, GameState *gameState, ParticlerParent 
 
 void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool clicked, float2 worldMousePLvl0, float3 mouseWorldP) {
 	bool released = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].releasedCount > 0;
-	pushShader(renderer, &lineShader);
 	
 	{
 		gameState->selectedEntityCount = 0;
+        gameState->currentItemInfo = getBlankItemInfo();
 
 		//NOTE: See if entities are selected 
 		for(int i = 0; i < gameState->entityCount; ++i) {
@@ -640,8 +659,9 @@ void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool
 						gameState->actionString = "CUT TREE";
 					}
 
-				
-					
+                    gameState->currentItemInfo = getItemInfo(e);
+                    gameState->itemInfoPos = make_float3(worldMousePLvl0.x, worldMousePLvl0.y, 0);
+
 					assert(gameState->selectedEntityCount < arrayCount(gameState->selectedEntityIds));
 					if(clicked && gameState->selectedEntityCount < arrayCount(gameState->selectedEntityIds)) {
 						SelectedEntityData *data = &gameState->selectedEntityIds[gameState->selectedEntityCount++];
@@ -654,6 +674,22 @@ void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool
 			}
 		}
 	} 
+}
+
+void renderAllDamageSplats(GameState *gameState) {
+    if(gameState->perFrameDamageSplatArray) {
+        for(int i = 0; i < getArrayLength(gameState->perFrameDamageSplatArray); ++i) {
+            RenderDamageSplatItem *item = gameState->perFrameDamageSplatArray + i;
+
+            float scale = 1.3f;
+            float3 p = item->p;
+            pushTexture(&gameState->renderer, gameState->splatTexture.handle, plus_float3(make_float3(0.4, -0.4, 0), p), make_float2(scale, scale), make_float4(0.4, 0, 0, 1), gameState->splatTexture.uvCoords);
+            
+            pushShader(&gameState->renderer, &sdfFontShader);
+            draw_text(&gameState->renderer, &gameState->font, item->string, p.x, p.y, 0.02, make_float4(1, 1, 1, 1)); 
+        }
+        gameState->perFrameDamageSplatArray = 0;
+    }
 }
 
 void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt, float16 fovMatrix, float windowWidth, float windowHeight){
@@ -699,14 +735,15 @@ void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt,
 
 	updateParticlers(renderer, gameState, &gameState->particlers, dt);
 
-	renderDamageSplats(gameState, dt);
-
 	updateAndDrawEntitySelection(gameState, renderer, clicked, worldMousePLvl0, worldMouseP);
 
 	// drawAllSectionHovers(gameState, renderer, dt, worldMouseP);
 
 	sortAndRenderEntityQueue(renderer);
 
+    renderAllDamageSplats(gameState);
+
+    
 	// drawClouds(gameState, renderer, dt);
 	// drawCloudsAsTexture(gameState, renderer, dt, fovMatrix, windowSize);
 	

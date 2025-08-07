@@ -66,6 +66,10 @@ static char *easyAnimation2d_copyString(char *str) {
     return result;
 }
 
+static bool easyAnimation_animationHasFrames(Animation *animation) {
+    return animation->frameCount > 0;
+}
+
 static bool easyAnimation_isControllerValid(EasyAnimation_Controller *controller) {
     return (controller->parent.next != 0);
 }

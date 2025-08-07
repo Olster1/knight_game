@@ -71,6 +71,11 @@ struct SelectedEntityData {
 	Entity *e;
 };
 
+struct RenderDamageSplatItem {
+    char *string;
+    float3 p;
+};
+
 typedef struct {
 	bool initialized;
 
@@ -156,12 +161,20 @@ typedef struct {
 	DefaultEntityAnimations ashTreeAnimations[4];
 	DefaultEntityAnimations alderTreeAnimations[2];
 	DefaultEntityAnimations templerKnightAnimations;
+	DefaultEntityAnimations bearAnimations;
+	DefaultEntityAnimations bearPelt;
+	
+	Inventory inventory;
 
 	Texture smokeTextures[5];
 	Texture splatTexture;
+	Texture inventoryTexture;
 
-	DamageSplat *damageSplats;
+	float3 itemInfoPos;
+	ItemInfo currentItemInfo;
+
 	DamageSplat *freeListDamageSplats;
+	RenderDamageSplatItem *perFrameDamageSplatArray;
 
 	Texture goblinHutTexture;
 	Animation goblinHutAnimation;

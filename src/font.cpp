@@ -267,8 +267,10 @@ static inline GlyphInfo easyFont_getGlyph(Font *font, u32 unicodePoint) {
 }
 
 
-static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, bool getBounds = false) {
+static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, float maxWidth = FLT_MAX) {
     Rect2f result = make_rect2f(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    maxWidth += startX;
 
     //TODO: The 0.8 is just to get it centered but need to revist it.
     float yAt = -0.8f*font->fontHeight*fontScale + yAt_;
@@ -282,7 +284,7 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
     while(*at) {
         char *at_ptr = ((char *)at);
 
-        if(*at_ptr == '\n') {
+        if(*at_ptr == '\n' || xAt >= maxWidth) {
             //NOTE: New line
             GlyphInfo g = easyFont_getGlyph(font, 'y');
             if(at_ptr[1] != '\0') {
@@ -292,11 +294,12 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
             
             float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
             xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
-            yAt -= font->fontHeight;
-            at++;
+            yAt -= font->fontHeight*fontScale;
+            if(*at_ptr == '\n') {
+                at++;
+            }
             newLine = true;
         } else {
-
             u32 rune = easyUnicode_utf8_codepoint_To_Utf32_codepoint(&at_ptr, true);
             at = at_ptr;
 
@@ -332,17 +335,18 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
             }
 
             xAt += (g.width + g.xoffset)*fontScale*factor;
+            newLine = false;
         }
 
-        newLine = false;
+        
     }
     return result;
 }
 
-static void draw_text(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color) {
-    draw_text_(renderer, font, str, startX, yAt_, fontScale, font_color);
+static void draw_text(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, float maxWidth = FLT_MAX) {
+    draw_text_(renderer, font, str, startX, yAt_, fontScale, font_color, maxWidth);
 }
 
-static Rect2f getTextBounds(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale) {
-    return draw_text_(renderer, font, str, startX, yAt_, fontScale, make_float4(1, 1, 1, 0), true);
+static Rect2f getTextBounds(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float maxWidth = FLT_MAX) {
+    return draw_text_(renderer, font, str, startX, yAt_, fontScale, make_float4(1, 1, 1, 0), maxWidth);
 }

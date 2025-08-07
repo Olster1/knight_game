@@ -177,6 +177,19 @@ bool hasAshTree(int worldX, int worldY) {
     return result;
 }
 
+bool hasBearEntity(int worldX, int worldY) {
+    DEBUG_TIME_BLOCK()
+    bool result = isCellPosition(worldX, worldY, 40);
+    float t0 = SimplexNoise_fractal_2d(16, worldX, worldY, 0.01);
+    t0 = mapSimplexNoiseTo01(t0);
+    if(result && t0 > 0.5f) {
+        result = true;
+    } else {
+        result = false;
+    }
+    return result;
+}
+
 bool hasAlderTree(int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
     bool result = isCellPosition(worldX, worldY, 6);
@@ -216,6 +229,7 @@ Chunk *Terrain::generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *
 
 Entity *addAshTreeEntity(GameState *state, float3 worldP);
 Entity *addAlderTreeEntity(GameState *state, float3 worldP);
+Entity *addBearEntity(GameState *state, float3 worldP);
 
 void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, Chunk *chunk) {
     DEBUG_TIME_BLOCK()
@@ -237,12 +251,12 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
             int worldX = chunkWorldX + x;
             int worldY = chunkWorldY + y;
 
-            if(hasAshTree(worldX, worldY)) {
-                addAshTreeEntity(gameState, make_float3(worldX, worldY, 0));
-            }
-
-             if(hasAlderTree(worldX, worldY)) {
+            if(hasBearEntity(worldX, worldY)) {
+                addBearEntity(gameState, make_float3(worldX, worldY, 0));
+            } else if(hasAlderTree(worldX, worldY)) {
                 addAlderTreeEntity(gameState, make_float3(worldX, worldY, 0));
+            } else if(hasAshTree(worldX, worldY)) {
+                addAshTreeEntity(gameState, make_float3(worldX, worldY, 0));
             }
 
 

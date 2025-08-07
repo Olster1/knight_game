@@ -70,7 +70,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			DEBUG_TIME_BLOCK_NAMED("INIT FONTS");
 
 			gameState->font = initFont("../fonts/liberation-mono.ttf");
-			gameState->pixelFont = initFont("../fonts/Pixelify.ttf");
+			gameState->pixelFont = initFont("../fonts/Medieval.ttf");
 		}
 		
 		gameState->fontScale = 0.6f;
@@ -134,8 +134,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/background.png");
 			gameState->splatTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/splat.png");
-
-
+			gameState->inventoryTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../src/images/entities/inventory.png");
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../src/images/entities/man.png", 32, 72, 1, 0, 0);
 
@@ -165,6 +164,13 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 			loadImageStripXY(&gameState->templerKnightAnimations.idle, backendRenderer, "../src/images/entities/knight.png", 32, 72, 1, 0, 0);
 
+			loadImageStripXY(&gameState->bearAnimations.idle, backendRenderer, "../src/images/entities/bear/bear.png", 128, 128, 1, 0, 0);
+			loadImageStripXY(&gameState->bearAnimations.dead, backendRenderer, "../src/images/entities/bear/beardown.png", 128, 128, 1, 0, 0);
+			loadImageStripXY(&gameState->bearAnimations.skinned, backendRenderer, "../src/images/entities/bear/bearskinned.png", 128, 128, 1, 0, 0);
+			loadImageStripXY(&gameState->bearAnimations.skeleton, backendRenderer, "../src/images/entities/bear/bearskeleton.png", 128, 128, 1, 0, 0);
+
+			loadImageStripXY(&gameState->bearPelt.idle, backendRenderer, "../src/images/entities/bear/bearpelt.png", 16, 16, 1, 0, 0);
+			
 		
 		}
 
@@ -174,6 +180,8 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 		gameState->cameraFollowPlayer = true;
 		//TODO: Probably save this each time we leave the app
 		gameState->zoomLevel = 1.8f;
+
+		// addToInventory(&gameState->inventory, PICKUP_ITEM_BEAR_PELT);
 
 		
 	// DefaultEntityAnimations barrellAnimations;

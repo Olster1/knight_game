@@ -109,7 +109,7 @@ void markBoardAsEntityUnOccupied(GameState *gameState, float3 worldP) {
 }
 
 
-Entity *makeNewEntity(GameState *state, float3 worldP) {
+Entity *makeNewEntity(GameState *state, float3 worldP, bool setBoard = true) {
     Entity *e = 0;
     if(state->entityCount < arrayCount(state->entities)) {
         e = &state->entities[state->entityCount++];
@@ -129,12 +129,14 @@ Entity *makeNewEntity(GameState *state, float3 worldP) {
         e->scale = make_float3(4, 4, 1);
         e->speed = 5.0f;
         e->sortYOffset = 0;
+        e->spawnPosition = e->pos;
+        e->homeDistance = 20;
 
         assert(e->maxMoveDistance <= 0.5f*DOUBLE_MAX_MOVE_DISTANCE);
 
-        markBoardAsEntityOccupied(state, worldP);
-
-
+        if(setBoard) {
+            markBoardAsEntityOccupied(state, worldP);
+        }
     }
     return e;
 }
@@ -222,6 +224,21 @@ void entityRenderSelected(GameState *state, Entity *e) {
     }
 }
 
+Entity *addBearEntity(GameState *state, float3 worldP) {
+    Entity *e = makeNewEntity(state, worldP);
+    if(e) {
+        e->type = ENTITY_BEAR;
+        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT | ENTITY_ATTACK_PLAYER | ENTITY_CAN_BE_ATTACKED;
+        e->offsetP.y = 0.16; 
+        e->scale = make_float3(5, 5, 1);
+        easyAnimation_initController(&e->animationController);
+		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &state->bearAnimations.idle, 0.08f);
+        e->animations = &state->bearAnimations;
+        e->speed = 3;
+    }
+    return e;
+} 
+
 Entity *addKnightEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
@@ -254,6 +271,7 @@ Entity *addAlderTreeEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_TREE;
+        e->flags |= ENTITY_CAN_BE_ATTACKED;
         e->offsetP.y = 0.3; //NOTE: Fraction of the scale
         e->scale = make_float3(6.419f, 10, 1);
 
@@ -269,6 +287,7 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_TREE;
+        e->flags |= ENTITY_CAN_BE_ATTACKED;
         e->offsetP.y = 0.3; //NOTE: Fraction of the scale
         e->scale = make_float3(6.419f, 10, 1);
 
@@ -280,6 +299,24 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
     }
     return e;
 }
+
+Entity *addPickupItem(GameState *state, float3 worldP, PickupItemType pickupType) {
+    Entity *e = makeNewEntity(state, worldP, false);
+    if(e) {
+        e->type = ENTITY_PICKUP_ITEM;
+        e->offsetP.y = 0.16; //NOTE: Fraction of the scale
+        e->scale = make_float3(2, 2, 1);
+        e->pickupItemType = pickupType;
+
+        if(pickupType == PICKUP_ITEM_BEAR_PELT) {
+            easyAnimation_initController(&e->animationController);
+            easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &state->bearPelt.idle, 0.08f);
+            e->animations = &state->bearPelt;
+        }
+    }
+    return e;
+}
+
 
 Entity *addTemplerKnightEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
@@ -610,44 +647,58 @@ float3 getOriginSelection(GameState *gameState) {
     return p;
 }
 
-DamageSplat *getDamageSplat(GameState *gameState) {
+DamageSplat *getDamageSplat(GameState *gameState, Entity *e) {
     DamageSplat *result = 0;
 
     if(gameState->freeListDamageSplats) {
         result = gameState->freeListDamageSplats;
         gameState->freeListDamageSplats = gameState->freeListDamageSplats->next;
+        
     } else {
         result = pushStruct(&global_long_term_arena, DamageSplat);
     }
+
+    
     
     if(result) {
+        //NOTE: Clear the damage splat
+        DamageSplat temp = {};
+        *result = temp;
+
         result->timeAt = 1;
-        result->next = gameState->damageSplats;
-        gameState->damageSplats = result;
+        result->next = e->damageSplats;
+        e->damageSplats = result;
     }
 
     return result;
 } 
 
 
-void renderDamageSplats(GameState *gameState, float dt) {
-    DamageSplat **d = &gameState->damageSplats;
+
+void renderDamageSplats(GameState *gameState, Entity *e, float dt) {
+    if(!gameState->perFrameDamageSplatArray) {
+        gameState->perFrameDamageSplatArray = initResizeArrayArena(RenderDamageSplatItem, &globalPerFrameArena);
+    }
+
+    DamageSplat **d = &e->damageSplats;
+    float3 offsets[4] = {make_float3(0, 1, 0), make_float3(0, -1, 0), make_float3(1, 0, 0), make_float3(-1, 0, 0)};
+    int count = 0;
     while(*d) {
         ((*d)->timeAt) -= dt;
 
         {
-            float3 p = getRenderWorldP((*d)->worldP);
+            float3 p = getRenderWorldP(e->pos);
+            p = plus_float3(p, offsets[count % arrayCount(offsets)]);
+            p.y += 1;
             p.z = 1;
 
-            p.x -= gameState->cameraPos.x; //NOTE: Offset for middle of the tile
-            p.y -= gameState->cameraPos.y; //NOTE: Offset for middle of the tile
-
-            float scale = 1.3f;//lerp(0.9f, 1.1f, make_lerpTValue(sin01(gameState->selectHoverTimer)));
-            pushTexture(&gameState->renderer, gameState->splatTexture.handle, plus_float3(make_float3(0.4, -0.4, 0), p), make_float2(scale, scale), make_float4(0.4, 0, 0, 1), gameState->splatTexture.uvCoords);
-
+            p.x -= gameState->cameraPos.x; 
+            p.y -= gameState->cameraPos.y;
             char *str = easy_createString_printf(&globalPerFrameArena, "%d", (*d)->damage);
-            pushShader(&gameState->renderer, &sdfFontShader);
-            draw_text(&gameState->renderer, &gameState->font, str, p.x, p.y, 0.02, make_float4(1, 1, 1, 1)); 
+            RenderDamageSplatItem r = {};
+            r.string = str;
+            r.p = p;
+            pushArrayItem(&gameState->perFrameDamageSplatArray, r, RenderDamageSplatItem);
         }
 
         if((*d)->timeAt <= 0) {
@@ -659,6 +710,6 @@ void renderDamageSplats(GameState *gameState, float dt) {
         } else {
             d = &((*d)->next);
         }
-        
+        count++;
     }
 }

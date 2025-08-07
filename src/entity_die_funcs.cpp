@@ -1,6 +1,17 @@
+void bearDie(GameState *gameState, Entity *entity) {
+    easyAnimation_emptyAnimationContoller(&entity->animationController, &gameState->animationState.animationItemFreeListPtr);
+    easyAnimation_addAnimationToController(&entity->animationController, &gameState->animationState.animationItemFreeListPtr, &entity->animations->dead, 0.08f);
+    entity->skeletonCountdown = 10;
+    entity->flags &= ~ENTITY_ATTACK_PLAYER;
+    // Entity *newPickupItem = addPickupItem(gameState, plus_float3(make_float3(0, 0, 0), entity->pos), PICKUP_ITEM_BEAR_PELT);
+    // if(newPickupItem) {
+    // }
+}
+
 void templerKnightDie(GameState *gameState, Entity *entity) {
     entity->flags &= ~ENTITY_ACTIVE;
 }
+
 void treeDie(GameState *gameState, Entity *attackEntity) {
     easyAnimation_addAnimationToController(&attackEntity->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->dead, 0.08f);
 

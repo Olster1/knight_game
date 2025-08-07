@@ -23,6 +23,12 @@ typedef struct {
 
 } Memory_Arena;
 
+MemoryPiece *getCurrentMemoryPiece(Memory_Arena *arena) {
+    MemoryPiece *piece = arena->pieces;
+    assert(piece);
+    return piece;
+
+}
 
 static size_t DEBUG_get_total_arena_size(Memory_Arena *arena) {
     MemoryPiece *p = arena->pieces;
