@@ -350,7 +350,7 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
         for(int i = 0; i < gameState->selectedEntityCount; ++i) {
             Entity *attackEntity = gameState->selectedEntityIds[i].e;
             
-            if(attackEntity->pickupItemType == PICKUP_ITEM_BEAR_PELT) {
+            if(attackEntity->type == ENTITY_PICKUP_ITEM && attackEntity->pickupItemType != PICKUP_ITEM_NONE) {
                 
                 bool success = addToInventory(&gameState->inventory, attackEntity->pickupItemType);
 
@@ -559,22 +559,20 @@ float3 getMouseWorldP(GameState *state, float windowWidth, float windowHeight) {
 
 }
 
+float3 getTileWorldP(GameState *gameState, float3 worldMouseP) {
+    float3 worldP = convertRealWorldToBlockCoords(worldMouseP);
+    // worldP.x -= gameState->cameraPos.x; //NOTE: Offset for middle of the tile
+    // worldP.y -= gameState->cameraPos.y; //NOTE: Offset for middle of the tile
+
+    return worldP;
+
+}
+
 void drawSelectionHover(GameState *gameState, Renderer *renderer, float dt, float3 worldMouseP, SelectedEntityData *selectedData) {
 	{
 		
 		float3 worldP = convertRealWorldToBlockCoords(worldMouseP);
 		float3 p = worldP;
-
-		// {
-		// 	//NOTE: See if the selection is on a tree tile
-		// 	float2 chunkP = getChunkPosForWorldP(worldMouseP.xy);
-		// 	Chunk *c = gameState->terrain.getChunk(&gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, chunkP.x, chunkP.y, 0, true, true);
-		// 	float3 tileP = getChunkLocalPos(p.x, p.y, p.z);
-		// 	Tile *tile = c->getTile(tileP.x, tileP.y, tileP.z);
-		// 	if(tile && !(tile->flags & TILE_FLAG_WALKABLE)) {
-		// 		gameState->selectedColor = make_float4(1, 0, 0, 1);
-		// 	}
-		// }
 
 		float4 color = make_float4(1, 1, 1, 1);
 
@@ -737,14 +735,81 @@ void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt,
 
 	updateAndDrawEntitySelection(gameState, renderer, clicked, worldMousePLvl0, worldMouseP);
 
-	// drawAllSectionHovers(gameState, renderer, dt, worldMouseP);
+    if(gameState->placeItem != PICKUP_ITEM_NONE) {
+        float2 area = {};
+        if(gameState->placeItem == PICKUP_ITEM_BEAR_TENT) {
+            area = make_float2(4, 4);
+        }
+
+        float3 worldP = convertRealWorldToBlockCoords(make_float3(worldMouseP.x, worldMouseP.y, worldMouseP.z));
+
+        bool safe = true;
+        for(int y = 0; y < area.y && safe; ++y) {
+            for(int x = 0; x < area.x && safe; ++x) {
+                float3 testP = make_float3(worldP.x, worldP.y, 0);
+                testP.x += x;
+                testP.y += y;
+                if(tileIsOccupied(gameState, testP)) {
+                    safe = false;
+                    break;
+                }
+            }
+        }
+
+        float4 color = make_float4(0, 1, 0, 0.4);
+        if(!safe) {
+            color = make_float4(1, 0, 0, 0.4);
+        }
+
+        for(int y = 0; y < area.y; ++y) {
+            for(int x = 0; x < area.x; ++x) {
+                float3 testP = make_float3(worldP.x, worldP.y, 0);
+                testP.x += x;
+                testP.y += y;
+
+                testP = getRenderWorldP(testP);
+                testP.z = RENDER_Z;
+
+                testP.x -= gameState->cameraPos.x;
+                testP.y -= gameState->cameraPos.y;
+
+                pushEntityTexture(renderer, global_white_texture, testP, make_float2(1, 1), color, make_float4(0, 0, 1, 1), getSortIndex(worldP, RENDER_LAYER_1));
+            }
+        }
+
+        if(safe && clicked) {
+            Entity *newEnt = addPickupItem(gameState, make_float3(worldP.x + 0.5f*area.x - 1, worldP.y + 0.5f*area.y - 1, 0), PICKUP_ITEM_BEAR_TENT, area);
+            gameState->placeItem = PICKUP_ITEM_NONE;
+
+            int pEntIndex = getNewOrReuseParticler(newEnt, ENTITY_SELECTED, &gameState->particlers);
+            if(pEntIndex >= 0) {
+                float3 particleP = newEnt->pos;
+
+                float3 spawnMargin = make_float3(newEnt->scale.x, newEnt->scale.y, 1);
+                Particler *p = getNewParticleSystem(&gameState->particlers, particleP, gameState->smokeTextures, arrayCount(gameState->smokeTextures), spawnMargin, 20);
+                
+                if(p) {
+                    p->lifespan = 0.3f;
+                    addColorToParticler(p, make_float4(1, 1, 1, 1.0));
+                    addColorToParticler(p, make_float4(1, 1, 1, 0.0));
+
+                    p->pattern.randomSize = make_float2(1.3f, 1.5f);
+                    p->pattern.dpMargin = 0.8f;
+                    p->pattern.speed = 4.3f;
+
+                    p->flags |= ENTITY_SELECTED; //NOTE: Tag it as a 'fire' particle system to check in the entity update code
+
+                    newEnt->particlers[pEntIndex] = p;
+                    newEnt->particlerIds[pEntIndex] = p->id;
+                }
+            }
+        }
+    }
+
+	drawAllSectionHovers(gameState, renderer, dt, worldMouseP);
 
 	sortAndRenderEntityQueue(renderer);
 
     renderAllDamageSplats(gameState);
-
-    
-	// drawClouds(gameState, renderer, dt);
-	// drawCloudsAsTexture(gameState, renderer, dt, fovMatrix, windowSize);
 	
 }

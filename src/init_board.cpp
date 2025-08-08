@@ -379,12 +379,10 @@ void initPlayerBoard(GameState *gameState) {
     float3 p = make_float3(0, 0, 0);
 
     addManEntity(gameState, p);
-    // int startBoardSize = 2;
-    // for(int x = -startBoardSize; x < startBoardSize; ++x) {
-    //     for(int y = -startBoardSize; y < startBoardSize; ++y) {
-    //         getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x, y, 0, true, true);
-    //     }
-    // }
+    addPickupItem(gameState, plus_float3(p, make_float3(2, 0, 0)), PICKUP_ITEM_SKINNING_KNIFE);
+    addPickupItem(gameState, plus_float3(p, make_float3(4, 0, 0)), PICKUP_ITEM_BEAR_PELT);
+
+    // gameState->placeItem = PICKUP_ITEM_BEAR_TENT;
 
     gameState->cameraPos.x = p.x;
     gameState->cameraPos.y = p.y;

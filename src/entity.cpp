@@ -294,24 +294,38 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
         e->animations = &state->ashTreeAnimations[random_between_int(0, arrayCount(state->ashTreeAnimations))];
         easyAnimation_initController(&e->animationController);
 		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &e->animations->idle, 0.08f);
-        
-        
     }
     return e;
 }
 
-Entity *addPickupItem(GameState *state, float3 worldP, PickupItemType pickupType) {
+DefaultEntityAnimations *getAnimationForPickupItem(GameState *state, PickupItemType pickupType) {
+    DefaultEntityAnimations *result = 0;
+    if(pickupType == PICKUP_ITEM_BEAR_PELT) {
+        result = &state->bearPelt;
+    } else if(pickupType == PICKUP_ITEM_SKINNING_KNIFE) {
+        result = &state->skinningKnife;
+    } else if(pickupType == PICKUP_ITEM_BEAR_TENT) {
+        result = &state->bearTent;
+    }
+    return result;
+}
+
+Entity *addPickupItem(GameState *state, float3 worldP, PickupItemType pickupType, float2 scale = {2, 2}) {
     Entity *e = makeNewEntity(state, worldP, false);
     if(e) {
         e->type = ENTITY_PICKUP_ITEM;
         e->offsetP.y = 0.16; //NOTE: Fraction of the scale
-        e->scale = make_float3(2, 2, 1);
+
+        e->scale = make_float3(scale.x, scale.y, 1);
+
         e->pickupItemType = pickupType;
 
-        if(pickupType == PICKUP_ITEM_BEAR_PELT) {
+        DefaultEntityAnimations *defaultAnimation = getAnimationForPickupItem(state, pickupType);
+
+        if(defaultAnimation) {
             easyAnimation_initController(&e->animationController);
-            easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &state->bearPelt.idle, 0.08f);
-            e->animations = &state->bearPelt;
+            easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &defaultAnimation->idle, 0.08f);
+            e->animations = defaultAnimation;
         }
     }
     return e;

@@ -549,11 +549,11 @@ static uint backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
 
 #if DEBUG_BUILD
 	if(!global_white_texture) {
-		global_white_texture = platform_loadFromFileToGPU("./images/white_texture.png").handle;
+		global_white_texture = platform_loadFromFileToGPU("../images/white_texture.png").handle;
 	}
 #else 
 	if(!global_white_texture) {
-		global_white_texture = platform_loadFromFileToGPU("./white_texture.png").handle;
+		global_white_texture = platform_loadFromFileToGPU("../white_texture.png").handle;
 	}
 #endif
 

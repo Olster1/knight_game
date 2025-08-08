@@ -139,10 +139,59 @@ bool hasDecorBush(int worldX, int worldY, int worldZ) {
     return result;
 }
 
-bool isCellPosition(int worldX, int worldY, int marginInVoxels) {
-     bool result = false;
+// Stateless hash from two ints
+uint32_t coord_hash_2d(int x, int y) {
+    uint32_t h = (uint32_t)(x * 374761393 + y * 668265263); // big primes
+    h = (h ^ (h >> 13)) * 1274126177;
+    h ^= h >> 16;
+    return h;
+}
 
-    int totalMarginForBothSides = marginInVoxels*2;
+// Convert to float in [0,1)
+float coord_rand01_2d(int x, int y) {
+    return (coord_hash_2d(x, y) & 0xFFFFFF) / (float)0x1000000;
+}
+
+uint32_t hash_coord_1d(uint32_t x) {
+    x = (x ^ 0x27d4eb2d) * 0x165667b1;  // mix with big odd constants
+    x ^= x >> 15;
+    x *= 0x85ebca6b;
+    x ^= x >> 13;
+    return x;
+}
+
+float coord_rand01_1d(uint32_t x) {
+    return (hash_coord_1d(x) & 0xFFFFFF) / (float)0x1000000;
+}
+
+static inline uint32_t hash_u32(uint32_t v) {
+    v ^= v >> 16;
+    v *= 0x7feb352d;
+    v ^= v >> 15;
+    v *= 0x846ca68b;
+    v ^= v >> 16;
+    return v;
+}
+
+void rand2_from_coords(int x, int y, float *out1, float *out2) {
+    uint32_t n = (uint32_t)(x * 374761393u + y * 668265263u);
+
+    uint32_t h1 = hash_u32(n);         // first hash
+    uint32_t h2 = hash_u32(n ^ 0x9e3779b9u); // second hash with different salt
+
+    *out1 = (h1 & 0xFFFFFF) / (float)0x1000000;
+    *out2 = (h2 & 0xFFFFFF) / (float)0x1000000;
+}
+
+struct WorldGenerationPositionInfo {
+    bool valid;
+    float randomValue;
+};
+
+WorldGenerationPositionInfo isCellPosition(int worldX, int worldY, int cellSizeInVoxels, int marginInVoxels) {
+     WorldGenerationPositionInfo result = {};
+
+    int totalMarginForBothSides = cellSizeInVoxels;
     
     float3 cellSize = make_float3(totalMarginForBothSides, totalMarginForBothSides, totalMarginForBothSides);
     float3 worldVoxelP = make_float3((int)(worldX), (int)(worldY), 0);
@@ -150,53 +199,56 @@ bool isCellPosition(int worldX, int worldY, int marginInVoxels) {
     int cellX = roundChunkCoord((float)worldVoxelP.x / (float)cellSize.x);
     int cellY = roundChunkCoord((float)worldVoxelP.y / (float)cellSize.y);
 
-    // float t0 = SimplexNoise_fractal_1d(32, cellX, 0.01);
-    // t0 = mapSimplexNoiseTo01(t0);
-    // int xOffset = (int)lerp(0, 2*totalMarginForBothSides, make_lerpTValue(t0));
-    int xOffset = random_between_int(0, totalMarginForBothSides);
+    float xNoise;
+    float yNoise;
 
-    // float t1 = SimplexNoise_fractal_1d(32, cellY, 0.01);
-    // t1 = mapSimplexNoiseTo01(t1);
+    result.randomValue = coord_rand01_2d(cellX, cellY);
 
-    // int yOffset = (int)lerp(0, 2*totalMarginForBothSides, make_lerpTValue(t1));
-    int yOffset = random_between_int(0, totalMarginForBothSides);
+    rand2_from_coords(cellX, cellY, &xNoise, &yNoise);
+
+    int xOffset = (int)lerp(0, marginInVoxels, make_lerpTValue(xNoise));
+    int yOffset = (int)lerp(0, marginInVoxels, make_lerpTValue(yNoise));
     
     float3 cellTargetP = make_float3(xOffset, yOffset, 0);
     int remainderX_centerBased = (worldVoxelP.x - (cellX * cellSize.x));
     int remainderY_centerBased = (worldVoxelP.y - (cellY * cellSize.y));
+    assert(remainderX_centerBased >= 0);
+    assert(remainderY_centerBased >= 0);
 
     if(remainderX_centerBased == (int)cellTargetP.x && remainderY_centerBased == (int)cellTargetP.y) {
-        result = true;
+        result.valid = true;
     }
     return result;
 }
 
-bool hasAshTree(int worldX, int worldY) {
+Entity *addAshTreeEntity(GameState *state, float3 worldP);
+Entity *addAlderTreeEntity(GameState *state, float3 worldP);
+Entity *addBearEntity(GameState *state, float3 worldP);
+
+void addTreeIfHasTree(GameState *state, int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
-    bool result = isCellPosition(worldX, worldY, 4);
-    return result;
+    WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 8, 7);
+
+    if(info.valid) {
+        if(info.randomValue < 0.3f) {
+            addAshTreeEntity(state, make_float3(worldX, worldY, 0));
+        } else if(info.randomValue < 1) {
+            addAlderTreeEntity(state, make_float3(worldX, worldY, 0));
+        }
+    }
 }
 
 bool hasBearEntity(int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
-    bool result = isCellPosition(worldX, worldY, 40);
-    float t0 = SimplexNoise_fractal_2d(16, worldX, worldY, 0.01);
-    t0 = mapSimplexNoiseTo01(t0);
-    if(result && t0 > 0.5f) {
-        result = true;
-    } else {
+    WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 80, 40);
+    bool result = info.valid;
+
+    if(info.randomValue < 0.4f) {
         result = false;
     }
     return result;
 }
 
-bool hasAlderTree(int worldX, int worldY) {
-    DEBUG_TIME_BLOCK()
-    bool result = isCellPosition(worldX, worldY, 6);
-    return result;
-
-    return result;
-}
 
 bool isWaterRock(int worldX, int worldY, int worldZ) {
     DEBUG_TIME_BLOCK()
@@ -227,9 +279,8 @@ Chunk *Terrain::generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *
     return chunk;
 }
 
-Entity *addAshTreeEntity(GameState *state, float3 worldP);
-Entity *addAlderTreeEntity(GameState *state, float3 worldP);
-Entity *addBearEntity(GameState *state, float3 worldP);
+
+bool tileIsOccupied(GameState *gameState, float3 worldP);
 
 void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, AnimationState *animationState, TextureAtlas *textureAtlas, Chunk *chunk) {
     DEBUG_TIME_BLOCK()
@@ -253,10 +304,9 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
 
             if(hasBearEntity(worldX, worldY)) {
                 addBearEntity(gameState, make_float3(worldX, worldY, 0));
-            } else if(hasAlderTree(worldX, worldY)) {
-                addAlderTreeEntity(gameState, make_float3(worldX, worldY, 0));
-            } else if(hasAshTree(worldX, worldY)) {
-                addAshTreeEntity(gameState, make_float3(worldX, worldY, 0));
+                assert(tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
+            } else  {
+                addTreeIfHasTree(gameState, worldX, worldY);
             }
 
 

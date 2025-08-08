@@ -89,8 +89,9 @@ void drawScrollText(char *text, GameState *gameState, Renderer *renderer, float2
 void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float windowWidth, float windowHeight, float2 mouseP_01){
 	DEBUG_TIME_BLOCK();
     GamePlay *play = &gameState->gamePlay;
-    
 
+    bool clicked = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0;
+    
     play->turnTime += dt;
 
     float aspectRatio_yOverX = windowHeight / windowWidth;
@@ -128,12 +129,13 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
         float ar = gameState->bannerTexture.aspectRatio_h_over_w;
 
         float fontSize = 0.06f;
+        float fontSizeDesc = 0.05f;
         float defaultWidth = 30;
         Rect2f boundsTitle = getTextBounds(renderer, &gameState->pixelFont, gameState->currentItemInfo.title, 0, 0, fontSize); 
 
         float marginX = math3d_maxfloat(get_scale_rect2f(boundsTitle).x, defaultWidth);
 
-        Rect2f boundsDescription = getTextBounds(renderer, &gameState->font, gameState->currentItemInfo.description, 0, 0, fontSize, marginX); 
+        Rect2f boundsDescription = getTextBounds(renderer, &gameState->font, gameState->currentItemInfo.description, 0, 0, fontSizeDesc, marginX); 
 
         float2 scale = get_scale_rect2f(rect2f_union(boundsTitle, boundsDescription));
 
@@ -142,22 +144,17 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
         scale.x = math3d_maxfloat(scale.x, defaultWidth);
         scale.y = math3d_maxfloat(scale.y, ar*defaultWidth);
 
-        float textureScale = 1.2f;
+        float textureScale = 1.1f;
         float2 offset = {};
         offset.x = textureScale*scale.x - scale.x;
         offset.y = textureScale*scale.y - scale.y;
         
-        pushTexture(renderer, gameState->shadowUiTexture.handle, make_float3(pos.x + textureScale*0.5f*scale.x, pos.y - textureScale*0.5f*scale.y, UI_Z_POS), scale_float2(textureScale, scale), make_float4(1, 1, 1, 0.3), gameState->shadowUiTexture.uvCoords);
-        pushTexture(renderer, gameState->bannerTexture.handle, make_float3(pos.x + textureScale*0.5f*scale.x, pos.y - textureScale*0.5f*scale.y, UI_Z_POS), scale_float2(textureScale, scale), make_float4(1, 1, 1, 1), gameState->bannerTexture.uvCoords);
-
-        // scale.x = math3d_maxfloat(1.1f*bScale.x, scale.x);
-        // scale.y = math3d_maxfloat(bScale.y, scale.y);
-
-        // // float2 pos = make_float2(0.5f*scale.x, 0.5f*scale.y);
+        // pushTexture(renderer, gameState->shadowUiTexture.handle, make_float3(pos.x + textureScale*0.5f*scale.x, pos.y - textureScale*0.5f*scale.y, UI_Z_POS), scale_float2(1.1*textureScale, scale), make_float4(1, 1, 1, 0.3), gameState->shadowUiTexture.uvCoords);
+        pushTexture(renderer, global_white_texture, make_float3(pos.x + textureScale*0.5f*scale.x, pos.y - textureScale*0.5f*scale.y, UI_Z_POS), scale_float2(textureScale, scale), make_float4(0.769, 0.643, 0.518, 1), make_float4(0, 0, 1, 1));
 
         pushShader(renderer, &sdfFontShader);
         draw_text(renderer, &gameState->pixelFont, gameState->currentItemInfo.title, pos.x + 0.5f*offset.x, pos.y - 0.5f*offset.y, fontSize, make_float4(0, 0, 0, 1)); 
-        draw_text(renderer, &gameState->font, gameState->currentItemInfo.description, pos.x + 0.5f*offset.x, (pos.y - get_scale_rect2f(boundsTitle).y) - 0.5f*offset.y, fontSize, make_float4(0, 0, 0, 1), marginX); 
+        draw_text(renderer, &gameState->font, gameState->currentItemInfo.description, pos.x + 0.5f*offset.x, (pos.y - get_scale_rect2f(boundsTitle).y) - 0.5f*offset.y, fontSizeDesc, make_float4(0, 0, 0, 1), marginX); 
     }
 
     //NOTE: Draw the player logo
@@ -185,17 +182,30 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
 
     }
     {
+        float3 mouseP = make_float3(mousex, mousey, UI_Z_POS);
         float2 s = scale_float2(3, make_float2(5.9f, 10));
         float2 pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_BOTTOM_LEFT, make_float2(0.5f*s.x, 0.5f*s.y), resolution);
         float3 p = make_float3(pos.x, pos.y, UI_Z_POS);
-        pushTexture(renderer, gameState->inventoryTexture.handle, p, s, make_float4(1, 1, 1, 1), gameState->inventoryTexture.uvCoords);
+        // pushTexture(renderer, gameState->inventoryTexture.handle, p, s, make_float4(1, 1, 1, 1), gameState->inventoryTexture.uvCoords);
 
         for(int i = 0; i < arrayCount(gameState->inventory.items); ++i) {
             if(gameState->inventory.items[i].type != PICKUP_ITEM_NONE) {
                 float2 s = scale_float2(3, make_float2(1, 1));
-                float2 pos = getUiPosition(make_float2(0.9f, 1.1f), UI_ANCHOR_BOTTOM_LEFT, make_float2(0.5f*s.x, 0.5f*s.y), resolution);
+                int x = (i % 3) + 1;
+                int y = (i / 3) + 1;
+                float2 pos = getUiPosition(make_float2(0.9f * x, 1.1f * y), UI_ANCHOR_BOTTOM_LEFT, make_float2(0.5f*s.x, 0.5f*s.y), resolution);
                 float3 p = make_float3(pos.x, pos.y, UI_Z_POS);
-                pushTexture(renderer, gameState->bearPelt.idle.frameSprites[0]->handle, p, s, make_float4(1, 1, 1, 1), gameState->bearPelt.idle.frameSprites[0]->uvCoords);
+
+                DefaultEntityAnimations *defaultAnimation = getAnimationForPickupItem(gameState, gameState->inventory.items[i].type);
+
+                if(defaultAnimation) {
+                    if(in_rect2f_bounds(make_rect2f_center_dim(p.xy, s), mouseP.xy) || gameState->placeItem == gameState->inventory.items[i].type) {
+                        pushTexture(renderer, global_white_texture, p, s, make_float4(0.3, 1, 0, 1), make_float4(0, 0, 1, 1));    
+                        gameState->placeItem = gameState->inventory.items[i].type;
+                    }
+                    pushTexture(renderer, defaultAnimation->idle.frameSprites[0]->handle, p, s, make_float4(1, 1, 1, 1), defaultAnimation->idle.frameSprites[0]->uvCoords);
+
+                }
             }
         }
     }

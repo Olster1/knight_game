@@ -163,6 +163,10 @@ typedef struct {
 	DefaultEntityAnimations templerKnightAnimations;
 	DefaultEntityAnimations bearAnimations;
 	DefaultEntityAnimations bearPelt;
+	DefaultEntityAnimations skinningKnife;
+	DefaultEntityAnimations bearTent;
+
+	PickupItemType placeItem;
 	
 	Inventory inventory;
 

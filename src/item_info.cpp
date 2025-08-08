@@ -17,9 +17,15 @@ ItemInfo getItemInfo(Entity *e) {
 
     if(e->type == ENTITY_BEAR) {
 
-    } else if(e->type == ENTITY_TREE) {
-        result.title = "Tree";
-        result.description = "Good for cutting and making fires. You need an axe to cut it.";
+    } else if(e->type == ENTITY_PICKUP_ITEM) {
+        if(e->pickupItemType == PICKUP_ITEM_SKINNING_KNIFE) {
+            result.title = "Skinning Knife";
+            result.description = "A knife with a curved blade. Could be good for skinning pelts.";
+        } else if(e->pickupItemType == PICKUP_ITEM_BEAR_PELT) {
+            result.title = "Bear Pelt";
+            result.description = "A bear pelt. Looks like useful craft item.";
+        }
+        
     }
 
     return result;

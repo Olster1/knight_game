@@ -267,7 +267,7 @@ static inline GlyphInfo easyFont_getGlyph(Font *font, u32 unicodePoint) {
 }
 
 
-static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, float maxWidth = FLT_MAX) {
+static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, bool renderGlyph, float maxWidth = FLT_MAX, bool recursiveChild = false) {
     Rect2f result = make_rect2f(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 
     maxWidth += startX;
@@ -279,74 +279,94 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
 
     float xAt = startX;
 
-    char *at = str;
-
-    while(*at) {
-        char *at_ptr = ((char *)at);
-
-        if(*at_ptr == '\n' || xAt >= maxWidth) {
-            //NOTE: New line
-            GlyphInfo g = easyFont_getGlyph(font, 'y');
-            if(at_ptr[1] != '\0') {
-                char *next = (at_ptr + 1);
-                g = easyFont_getGlyph(font, easyUnicode_utf8_codepoint_To_Utf32_codepoint(&next, false));
-            }
-            
-            float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
-            xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
-            yAt -= font->fontHeight*fontScale;
-            if(*at_ptr == '\n') {
-                at++;
-            }
-            newLine = true;
+    bool parsing = true;
+    EasyTokenizer tokenizer = lexBeginParsing(str, EASY_LEX_OPTION_NONE);
+   
+    while(parsing) {
+         EasyToken token = lexGetNextToken(&tokenizer);
+        if(token.type == TOKEN_NULL_TERMINATOR) {
+            parsing = false;
         } else {
-            u32 rune = easyUnicode_utf8_codepoint_To_Utf32_codepoint(&at_ptr, true);
-            at = at_ptr;
-
-            float factor = 1.0f;
-
-            GlyphInfo g = easyFont_getGlyph(font, rune);
-
-            assert(g.unicodePoint == rune);
-
-            if(rune == ' ') {
-                g.width = easyFont_getGlyph(font, 'y').width;
-            }
-
-            if(g.hasTexture) {
-
-
-                float4 color = font_color;//make_float4(0, 0, 0, 1);
-                float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
-                float offsetY = -0.5f*scale.y;
-
-                if(newLine) {
-                    xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
+            if(!recursiveChild && token.type != TOKEN_SPACE) {
+                char *word = easy_createString_printf(&globalPerFrameArena, "%.*s", token.size, token.at);
+                float2 bounds = get_scale_rect2f(draw_text_(renderer, font, word, startX, yAt_, fontScale, font_color, false, FLT_MAX, true));
+                if((xAt + bounds.x) >= maxWidth && bounds.x < (maxWidth - startX)) {
+                    xAt = maxWidth;
                 }
-
-                float3 pos = {};
-                pos.x = xAt + fontScale*g.xoffset;
-                assert(pos.x >= startX);
-                pos.y = yAt -fontScale*g.yoffset + offsetY;
-                pos.z = 0;
-                pushGlyph(renderer, g.handle, pos, scale, font_color, g.uvCoords);
-
-                result = rect2f_union(make_rect2f_center_dim(make_float2(pos.x, pos.y), scale), result);
             }
 
-            xAt += (g.width + g.xoffset)*fontScale*factor;
-            newLine = false;
-        }
+            char *at = token.at;
 
-        
+            while(at < (token.at + token.size)) {
+
+                if((*at == '\n' || xAt >= maxWidth) && token.type != TOKEN_SPACE) {
+                    //NOTE: New line
+                    GlyphInfo g = easyFont_getGlyph(font, 'y');
+                    xAt = startX;
+
+                    if(*at == '\n' && at[1] != '\0') {
+                        char *next = (at + 1);
+                        g = easyFont_getGlyph(font, easyUnicode_utf8_codepoint_To_Utf32_codepoint(&next, false));
+                        float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
+                        xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
+                    }
+                    
+                    yAt -= font->fontHeight*fontScale;
+                    if(*at == '\n') {
+                        at++;
+                    }
+                    newLine = true;
+                } else {
+                    u32 rune = easyUnicode_utf8_codepoint_To_Utf32_codepoint(&at, true);
+
+                    float factor = 1.0f;
+
+                    GlyphInfo g = easyFont_getGlyph(font, rune);
+
+                    assert(g.unicodePoint == rune);
+
+                    if(rune == ' ') {
+                        g.width = easyFont_getGlyph(font, 'y').width;
+                    }
+
+                    if(g.hasTexture) {
+
+
+                        float4 color = font_color;//make_float4(0, 0, 0, 1);
+                        float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
+                        float offsetY = -0.5f*scale.y;
+
+                        if(newLine) {
+                            xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
+                        }
+
+                        float3 pos = {};
+                        pos.x = xAt + fontScale*g.xoffset;
+                        assert(pos.x >= startX);
+                        pos.y = yAt -fontScale*g.yoffset + offsetY;
+                        pos.z = 0;
+
+                        if(renderGlyph) {
+                            pushGlyph(renderer, g.handle, pos, scale, font_color, g.uvCoords);
+                        }
+                        
+
+                        result = rect2f_union(make_rect2f_center_dim(make_float2(pos.x, pos.y), scale), result);
+                    }
+
+                    xAt += (g.width + g.xoffset)*fontScale*factor;
+                    newLine = false;
+                }
+            }
+        }
     }
     return result;
 }
 
 static void draw_text(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, float maxWidth = FLT_MAX) {
-    draw_text_(renderer, font, str, startX, yAt_, fontScale, font_color, maxWidth);
+    draw_text_(renderer, font, str, startX, yAt_, fontScale, font_color, true, maxWidth);
 }
 
 static Rect2f getTextBounds(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float maxWidth = FLT_MAX) {
-    return draw_text_(renderer, font, str, startX, yAt_, fontScale, make_float4(1, 1, 1, 0), maxWidth);
+    return draw_text_(renderer, font, str, startX, yAt_, fontScale, make_float4(1, 1, 1, 0), false, maxWidth);
 }

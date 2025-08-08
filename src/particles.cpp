@@ -145,10 +145,15 @@ bool updateParticler(Renderer *renderer, Particler *particler, float3 cameraPos,
             float y = lerp(spawnBox.minY, spawnBox.maxY, make_lerpTValue((float)rand() / RAND_MAX));
             float z = lerp(spawnBox.minZ, spawnBox.maxZ, make_lerpTValue((float)rand() / RAND_MAX));
             p->T.pos = make_float3(x, y, z);
-            p->T.scale = make_float3(random_between_float(pattern.randomSize.x, pattern.randomSize.y), random_between_float(pattern.randomSize.x, pattern.randomSize.y), 0.1f);
-
+            
             int imageIndex = random_between_int(0, particler->maxTextureArrayCount);
             p->imageHandle = &particler->imageHandles[imageIndex];
+
+            float scaleX = random_between_float(pattern.randomSize.x, pattern.randomSize.y);
+            float y_over_x = (p->imageHandle->width > 0) ? p->imageHandle->height / p->imageHandle->width : 1;
+            p->T.scale = make_float3(scaleX, scaleX*y_over_x, 0.1f);
+
+            
 
             p->dP = make_float3(random_between_float(-pattern.dpMargin, pattern.dpMargin), random_between_float(-pattern.dpMargin, pattern.dpMargin), pattern.speed); //NOTE: Straight up
             p->lifeTime = MAX_PARTICLE_LIFETIME; //Seconds
