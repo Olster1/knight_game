@@ -198,7 +198,7 @@ void sortAndRenderEntityQueue(Renderer *renderer) {
 		}
 	}
 
-	pushShader(renderer, &terrainLightingShader);
+	pushShader(renderer, &pixelArtWithLightsShader);
 	//NOTE: Draw the list
 	for(int i = 0; i < renderer->entityRenderCount; ++i) {
 		InstanceEntityData *d = renderer->entityRenderData + i; 
@@ -219,7 +219,7 @@ void renderTileMap(GameState *gameState, Renderer *renderer, float16 fovMatrix, 
 	offset.x /= CHUNK_DIM;
 	offset.y /= CHUNK_DIM;
 
-    pushShader(renderer, &pixelArtShader);
+    pushShader(renderer, &pixelArtWithLightsShader);
     for(int y_ = renderDistance; y_ >= -renderDistance; --y_) {
         for(int x_ = -renderDistance; x_ <= renderDistance; ++x_) {
             Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x_ + offset.x, y_ + offset.y, 0, true, true);
@@ -303,6 +303,29 @@ static float3 roundToGridBoard(float3 in, float tileSize) {
     return result;
 }
 
+void pushEntityLight(GameState *gameState, Entity *e, float dt) {
+    if(hasEntityFlag(e, ENTITY_LIGHT_COMPONENT)) {
+        float3 worldPos = e->pos;
+        //NOTE: Update the flicker
+        e->perlinNoiseLight += dt;
+
+        if(e->perlinNoiseLight > 1.0f) {
+            e->perlinNoiseLight = 0.0f;
+        }
+
+        float value = SimplexNoise_fractal_1d(8, e->perlinNoiseLight, 3);
+        value = mapSimplexNoiseTo01(value);
+
+        float3 viewPos = worldPos;
+
+        viewPos.x -= gameState->cameraPos.x;
+        viewPos.y -= gameState->cameraPos.y;
+
+        //NOTE: Push light
+        pushGameLight(&gameState->renderer, viewPos, e->lightColor, 1);
+    }
+}
+
 void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt, float3 mouseWorldP) {
     DEBUG_TIME_BLOCK();
     if(!(e->flags & ENTITY_ACTIVE)) {
@@ -310,14 +333,29 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
     }
     bool clicked = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0;
 
+    pushEntityLight(gameState, e, dt);
+
     refreshParticlers(gameState, e);
+
+
+    if(e->targetEntityId > 0) {
+        Entity *targetEntity = findEntityById(gameState, e->targetEntityId);
+        if(targetEntity) {
+            //NOTE: Path find towards the entity
+            
+        }
+    }
 
     if(e->flags & ENTITY_ATTACK_PLAYER) {
         if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->spawnPosition.xy)) < e->homeDistance) {
-            float2 impluse = normalize_float2(minus_float2(gameState->player->pos.xy, e->pos.xy));
-            impluse = scale_float2(e->speed, impluse); 
+            // float2 impluse = normalize_float2(minus_float2(gameState->player->pos.xy, e->pos.xy));
+            // impluse = scale_float2(e->speed, impluse); 
 
-            e->velocity.xy = plus_float2(e->velocity.xy, impluse);
+            // e->velocity.xy = plus_float2(e->velocity.xy, impluse);
+
+            e->targetEntityId = gameState->player->id;
+        } else {
+            e->targetEntityId = 0;
         }
 
         if(e->attackCooldown > 0) {
@@ -389,7 +427,10 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
                         treeDie(gameState, attackEntity);
                     } else if(attackEntity->type == ENTITY_BEAR) {
                         bearDie(gameState, attackEntity);
+                    } else if(attackEntity->type == ENTITY_GHOST) {
+                        ghostDie(gameState, attackEntity);
                     }
+                    
                 }
             }
         }
@@ -464,28 +505,6 @@ void renderEntity(GameState *gameState, Renderer *renderer, Entity *e, float16 f
 }
 
 
-
-void pushAllEntityLights(GameState *gameState, float dt) {
-    //NOTE: Push all lights for the renderer to use
-	for(int i = 0; i < gameState->entityCount; ++i) {
-		Entity *e = &gameState->entities[i];
-
-		if(hasEntityFlag(e, ENTITY_ACTIVE) && hasEntityFlag(e, LIGHT_COMPONENT)) {
-            float3 worldPos = getWorldPosition(e);
-            //NOTE: Update the flicker
-            e->perlinNoiseLight += dt;
-
-            if(e->perlinNoiseLight > 1.0f) {
-                e->perlinNoiseLight = 0.0f;
-            }
-
-            float value = SimplexNoise_fractal_1d(40, e->perlinNoiseLight, 3);
-
-            //NOTE: Push light
-            pushGameLight(gameState, worldPos, make_float4(1, 0.5f, 0, 1), value);
-		}
-	}
-}
 float2 getMouseWorldPLvl0(GameState *state, float windowWidth, float windowHeight) {
 	float2 mouseP = make_float2(global_platformInput.mouseX, windowHeight - global_platformInput.mouseY);
     float2 mouseP_01 = make_float2(mouseP.x / windowWidth, mouseP.y / windowHeight);
@@ -681,6 +700,7 @@ void renderAllDamageSplats(GameState *gameState) {
 
             float scale = 1.3f;
             float3 p = item->p;
+            pushShader(&gameState->renderer, &pixelArtShader);
             pushTexture(&gameState->renderer, gameState->splatTexture.handle, plus_float3(make_float3(0.4, -0.4, 0), p), make_float2(scale, scale), make_float4(0.4, 0, 0, 1), gameState->splatTexture.uvCoords);
             
             pushShader(&gameState->renderer, &sdfFontShader);
@@ -690,20 +710,25 @@ void renderAllDamageSplats(GameState *gameState) {
     }
 }
 
+void updateTimeOfDay(GameState *gameState, float dt) {
+    gameState->renderer.dayNightValue += 0.01f*dt;
+    while(gameState->renderer.dayNightValue > 1.0f) {
+        gameState->renderer.dayNightValue -= 1.0f;
+    }
+}
+
 void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt, float16 fovMatrix, float windowWidth, float windowHeight){
 	DEBUG_TIME_BLOCK();
 
 	gameState->selectedMoveCount = 0; //NOTE: The count of how many entities are able to move
+    updateTimeOfDay(gameState, dt);
 
-    //NOTE: Push all lights for the renderer to use
-	pushAllEntityLights(gameState, dt);
 	updateEntityPhysics(gameState, dt);
 
 	pushMatrix(renderer, fovMatrix);
 
 	float2 windowSize = make_float2(windowWidth, windowHeight);
 
-    pushShader(renderer, &pixelArtShader);
 	renderTileMap(gameState, renderer, fovMatrix, windowSize, dt);
 	
 

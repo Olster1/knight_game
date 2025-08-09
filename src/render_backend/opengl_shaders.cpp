@@ -19,7 +19,7 @@ static char *quadVertexShader =
 "out vec4 color_frag;"
 "out vec2 uv_frag;"
 "out float texture_array_index;"
-"out vec2 worldP;"
+"out vec3 viewP;"
 
 "void main() {"
     "vec3 p = vertex;"
@@ -29,7 +29,7 @@ static char *quadVertexShader =
 
     "p += pos;"
 
-    "worldP = pos.xy;"
+    "viewP = p;"
 
     "gl_Position = projection * vec4(p, 1.0f);"
     "color_frag = color;"
@@ -43,7 +43,7 @@ static char* fragCloudShader =
 "in vec4 color_frag;" 
 "in vec2 uv_frag; "
 "in float AOValue;"
-"in vec2 worldP;"
+"in vec3 viewP;"
 "uniform sampler2D diffuse;"
 "uniform float totalTime;"
 "out vec4 color;"
@@ -79,7 +79,7 @@ static char* fragCloudShader =
 //
 "void main() {"
     // Scale and move the noise field
-    "vec2 pos = uv_frag * 3.0 + vec2(10*totalTime * 0.05, 10*totalTime * 0.01) + worldP;"
+    "vec2 pos = uv_frag * 3.0 + vec2(10*totalTime * 0.05, 10*totalTime * 0.01) + viewP.xy;"
 
     // Stack multiple layers of Perlin noise for more richness
     "float noise = 0.0;"
@@ -289,12 +289,23 @@ static char *sdfFragShader =
     "colorOut = color;"
 "}";
 
-static char *pixelArtFragShader = 
+static char *pixelArtLightsFragShader = 
 "#version 330\n"
 "in vec4 color_frag;" 
 "in vec2 uv_frag; "
+"in vec3 viewP; "
 "uniform sampler2D diffuse;"
 "out vec4 color;"
+
+"struct PointLight {"
+    "vec3 position;"
+    "vec3 color;"
+"};"
+
+"uniform PointLight lights[64];"
+"uniform int lightCount;"
+"uniform float dayNightValue;"
+
 "void main() {"
     "vec2 size = textureSize(diffuse, 0);"
     "vec2 uv = uv_frag * size;"
@@ -306,9 +317,53 @@ static char *pixelArtFragShader =
     "if(sample.w == 0) {"
         "discard;"
     "}"
-   
+
+    "vec3 totalLight = vec3(dayNightValue);"
+
+    "for (int i = 0; i < lightCount; i++) {"
+        "vec2 toLight = lights[i].position.xy - viewP.xy;"
+        "float dist = length(toLight);"
+
+        // "float A = 2;"
+        // "float B = 0.1;"
+
+        // "dist = (dist - A) / (B - A);"
+
+        "float attenuation = 1.0 / (dist * dist);"
+        // "float attenuation = clamp(dist, 0.0, 1.0);"
+
+        "totalLight +=  lights[i].color*vec3(3*attenuation);"
+    "}"
+
+    "vec3 mapped = totalLight / (totalLight + vec3(1.0));"
+
+    "color = sample*color_frag*vec4(mapped, 1);"
+"}";
+
+
+static char *pixelArtFragShader = 
+"#version 330\n"
+"in vec4 color_frag;" 
+"in vec2 uv_frag; "
+"in vec3 viewP; "
+"uniform sampler2D diffuse;"
+"out vec4 color;"
+
+"void main() {"
+    "vec2 size = textureSize(diffuse, 0);"
+    "vec2 uv = uv_frag * size;"
+    "vec2 duv = fwidth(uv);"
+    "uv = floor(uv) + 0.5 + clamp(((fract(uv) - 0.5 + duv)/duv), 0.0, 1.0);"
+    "uv /= size;"
+    "vec4 sample = texture(diffuse, uv);"
+
+    "if(sample.w == 0) {"
+        "discard;"
+    "}"
+
     "color = sample*color_frag;"
 "}";
+
 
 static char *lineFragShader = 
 "#version 330\n"

@@ -1,9 +1,3 @@
-struct GameLight {
-    float3 worldPos;
-    float4 color;
-
-};
-
 typedef enum {
 	EASY_PROFILER_DRAW_OVERVIEW,
 	EASY_PROFILER_DRAW_ACCUMALTED,
@@ -165,6 +159,7 @@ typedef struct {
 	DefaultEntityAnimations bearPelt;
 	DefaultEntityAnimations skinningKnife;
 	DefaultEntityAnimations bearTent;
+	DefaultEntityAnimations ghostAnimations;
 
 	PickupItemType placeItem;
 	
@@ -221,7 +216,4 @@ typedef struct {
 	bool cameraFollowPlayer;
 
 	float zoomLevel;
-
-    int lightCount;
-    GameLight lights[64];
 } GameState;

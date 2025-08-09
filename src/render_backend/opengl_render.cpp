@@ -84,6 +84,7 @@ Shader textureShader;
 Shader rectOutlineShader;
 Shader lineShader;
 Shader pixelArtShader;
+Shader pixelArtWithLightsShader;
 Shader terrainLightingShader;
 Shader cloudShader;
 
@@ -540,6 +541,8 @@ static uint backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
     textureShader = loadShader(quadVertexShader, quadTextureFragShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
     rectOutlineShader = loadShader(rectOutlineVertexShader, rectOutlineFragShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
     pixelArtShader = loadShader(quadVertexShader, pixelArtFragShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
+    pixelArtWithLightsShader = loadShader(quadVertexShader, pixelArtLightsFragShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
+    
     lineShader = loadShader(lineVertexShader, lineFragShader, ATTRIB_INSTANCE_TYPE_LINE);
     terrainLightingShader = loadShader(quadAoMaskVertexShader, pixelArtAoMaskFragShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
     cloudShader = loadShader(quadVertexShader, fragCloudShader, ATTRIB_INSTANCE_TYPE_DEFAULT);
@@ -662,6 +665,24 @@ void drawModels(Renderer *r_, BackendRenderer *r, ModelBuffer *model, uint32_t t
     renderCheckError();
 
     glUniform1f(glGetUniformLocation(shader->handle, "totalTime"), r_->totalTime);
+    renderCheckError();
+
+    glUniform1i(glGetUniformLocation(shader->handle, "lightCount"), r_->lightCount);
+    renderCheckError();
+
+    for (int i = 0; i < r_->lightCount; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "lights[%d].position", i);
+        GLint loc = glGetUniformLocation(shader->handle, name);
+        glUniform3fv(loc, 1, &r_->lights[i].viewPos.x);
+
+        snprintf(name, sizeof(name), "lights[%d].color", i);
+        loc = glGetUniformLocation(shader->handle, name);
+        glUniform3fv(loc, 1, &r_->lights[i].color.x);
+    }
+
+    float mappedDayNight = getTimeOfDayValueMapped(r_->dayNightValue);
+    glUniform1f(glGetUniformLocation(shader->handle, "dayNightValue"), lerp(0.2f, 1.0f, make_lerpTValue(mappedDayNight)));
     renderCheckError();
 
     bindTexture("diffuse", 1, textureId, shader);

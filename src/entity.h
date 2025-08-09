@@ -1,8 +1,8 @@
-static u32 global_entityId = 0;
+static u32 global_entityId = 1;
 
 enum EntityFlag {
     ENTITY_ACTIVE = 1 << 0, 
-    LIGHT_COMPONENT = 1 << 1,
+    ENTITY_LIGHT_COMPONENT = 1 << 1,
     ENTITY_SPRITE_FLIPPED = 1 << 3,
     ENTITY_ON_FIRE = 1 << 4, //NOTE: For buildings that catch fire
     ENTITY_CAN_WALK = 1 << 5, //NOTE: For entities that can walk around like the peasant, knight, etc.
@@ -42,6 +42,7 @@ FUNC(ENTITY_CASTLE)\
 FUNC(ENTITY_TOWER)\
 FUNC(ENTITY_GOBLIN_HOUSE)\
 FUNC(ENTITY_GOBLIN_TOWER)\
+FUNC(ENTITY_GHOST)\
 
 typedef enum {
     MY_ENTITY_TYPE(ENUM)
@@ -154,6 +155,8 @@ struct Entity {
     EntityType type;
     u64 flags;
 
+    int targetEntityId;
+
     //NOTE: TRANSFORM component
     float3 pos;
     float3 spawnPosition; //NOTE: Used to decide wether to stop trying to get the player
@@ -168,6 +171,7 @@ struct Entity {
     float homeDistance;
     float attackCooldown;
     float skeletonCountdown;
+    float3 lightColor;
 
     int maxMoveDistance;
     EntityMove *moves;

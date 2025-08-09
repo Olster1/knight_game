@@ -1,5 +1,5 @@
 void clearGameStatePerFrameValues(GameState *state) {
-	state->lightCount = 0;
+	state->renderer.lightCount = 0;
 }
 
 
@@ -131,6 +131,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->smokeTextures[2] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff3.png");
 			gameState->smokeTextures[3] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff4.png");
 			gameState->smokeTextures[4] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff5.png");
+			
 
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/background.png");
 			gameState->splatTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/splat.png");
@@ -172,10 +173,8 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			loadImageStripXY(&gameState->bearPelt.idle, backendRenderer, "../images/entities/bear/bearpelt.png", 16, 16, 1, 0, 0);
 			loadImageStripXY(&gameState->skinningKnife.idle, backendRenderer, "../images/entities/weapons/knife.png", 32, 32, 1, 0, 0);
 			loadImageStripXY(&gameState->bearTent.idle, backendRenderer, "../images/entities/bear/bearTent.png", 128, 128, 1, 0, 0);
-			
-			
-			
-		
+
+			loadImageStripXY(&gameState->ghostAnimations.idle, backendRenderer, "../images/entities/nightime/ghost.png", 64, 64, 1, 0, 0);
 		}
 
 		gameState->selectedColor = make_float4(1, 1, 1, 1);

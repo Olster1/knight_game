@@ -8,12 +8,12 @@ float3 getRenderWorldPWithOffset(Entity *e) {
     return p;
 }
 
-void pushGameLight(GameState *state, float3 worldPos, float4 color, float perlinNoiseValue) {
+void pushGameLight(Renderer *state, float3 viewPos, float3 color, float perlinNoiseValue) {
 	if(state->lightCount < arrayCount(state->lights)) {
 		GameLight *l = &state->lights[state->lightCount++];
 
-		l->worldPos = worldPos;
-		l->color = scale_float4(perlinNoiseValue, color);
+		l->viewPos = viewPos;
+		l->color = scale_float3(perlinNoiseValue, color);
 	}
 }
 
@@ -223,6 +223,22 @@ void entityRenderSelected(GameState *state, Entity *e) {
         // }
     }
 }
+
+Entity *addGhostEntity(GameState *state, float3 worldP) {
+    Entity *e = makeNewEntity(state, worldP);
+    if(e) {
+        e->type = ENTITY_GHOST;
+        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT | ENTITY_ATTACK_PLAYER | ENTITY_CAN_BE_ATTACKED | ENTITY_LIGHT_COMPONENT;
+        e->offsetP.y = 0.16; 
+        e->scale = make_float3(3, 3, 1);
+        easyAnimation_initController(&e->animationController);
+		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &state->ghostAnimations.idle, 0.08f);
+        e->animations = &state->ghostAnimations;
+        e->speed = 3;
+        e->lightColor = make_float3(1, 1, 1);
+    }
+    return e;
+} 
 
 Entity *addBearEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);

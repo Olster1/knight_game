@@ -224,6 +224,7 @@ WorldGenerationPositionInfo isCellPosition(int worldX, int worldY, int cellSizeI
 Entity *addAshTreeEntity(GameState *state, float3 worldP);
 Entity *addAlderTreeEntity(GameState *state, float3 worldP);
 Entity *addBearEntity(GameState *state, float3 worldP);
+Entity *addGhostEntity(GameState *state, float3 worldP);
 
 void addTreeIfHasTree(GameState *state, int worldX, int worldY) {
     DEBUG_TIME_BLOCK()
@@ -244,6 +245,18 @@ bool hasBearEntity(int worldX, int worldY) {
     bool result = info.valid;
 
     if(info.randomValue < 0.4f) {
+        result = false;
+    }
+    return result;
+}
+
+
+bool hasGhostEntity(int worldX, int worldY) {
+    DEBUG_TIME_BLOCK()
+    WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 40, 20);
+    bool result = info.valid;
+
+    if(info.randomValue < 0.2f) {
         result = false;
     }
     return result;
@@ -304,11 +317,14 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
 
             if(hasBearEntity(worldX, worldY)) {
                 addBearEntity(gameState, make_float3(worldX, worldY, 0));
-                assert(tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
-            } else  {
+            }
+            if(hasGhostEntity(worldX, worldY)) {
+                assert(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
+                addGhostEntity(gameState, make_float3(worldX, worldY, 0));
+            }
+            if(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0))){
                 addTreeIfHasTree(gameState, worldX, worldY);
             }
-
 
     //             TileType type = getLandscapeValue(worldX, worldY, worldZ);
 

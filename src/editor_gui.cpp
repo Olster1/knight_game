@@ -62,7 +62,7 @@ float2 getClickedWorldPos(GameState *state, float2 mouseP_01) {
     return make_float2(worldX, worldY);
 }
 
-Entity *findEntityById(GameState *state, u32 id) {
+Entity *findEntityById(GameState *state, s32 id) {
     Entity *result = 0;
     for(int i = 0; i < state->entityCount;++i) {
         Entity *e = &state->entities[i];

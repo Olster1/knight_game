@@ -11,6 +11,9 @@ void bearDie(GameState *gameState, Entity *entity) {
 void templerKnightDie(GameState *gameState, Entity *entity) {
     entity->flags &= ~ENTITY_ACTIVE;
 }
+void ghostDie(GameState *gameState, Entity *entity) {
+    entity->flags &= ~ENTITY_ACTIVE;
+}
 
 void treeDie(GameState *gameState, Entity *attackEntity) {
     easyAnimation_addAnimationToController(&attackEntity->animationController, &gameState->animationState.animationItemFreeListPtr, &attackEntity->animations->dead, 0.08f);

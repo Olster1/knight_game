@@ -149,6 +149,16 @@ typedef struct {
 #define SIZE_OF_LINE_INSTANCE_IN_BYTES (sizeof(InstanceDataLine))
 #define LINE_INSTANCE_DATA_TOTAL_SIZE_IN_BYTES MAX_LINE_COUNT*SIZE_OF_LINE_INSTANCE_IN_BYTES
 
+struct GameLight {
+    float3 viewPos;
+    float3 color;
+
+};
+float getTimeOfDayValueMapped(float t) {
+    // t in [0,1], where 0 = midnight, 0.5 = noon, 1 = midnight
+    return 0.5f * (1.0f - cos(t * TAU32));
+}
+
 typedef struct {
 	RenderCommandType currentType;
 
@@ -174,6 +184,10 @@ typedef struct {
 	u8  lineInstanceData[LINE_INSTANCE_DATA_TOTAL_SIZE_IN_BYTES]; //NOTE: This would be x, y, z, x, y, z, r, g, b, a
 
 	float totalTime;
+
+	int lightCount;
+    GameLight lights[64];
+	float dayNightValue;
 
 } Renderer;
 
