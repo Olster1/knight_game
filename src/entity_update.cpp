@@ -224,47 +224,41 @@ void renderTileMap(GameState *gameState, Renderer *renderer, float16 fovMatrix, 
         for(int x_ = -renderDistance; x_ <= renderDistance; ++x_) {
             Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, x_ + offset.x, y_ + offset.y, 0, true, true);
             if(c) {
-                float2 chunkScale = make_float2(CHUNK_DIM, CHUNK_DIM);
-                // if(c->texture.textureHandle && c->texture.textureHandle->handle > 0) 
-                {
-                    if(!c->generatedMipMaps) {
-                        // generateMipMapsForTexture(c->texture.textureHandle);
-                        c->generatedMipMaps = true;
-                    }
-                    //NOTE: Render this tile
-                    float3 worldP = getChunkWorldP(c);
-                    float3 renderP = worldP;
-                    renderP.x -= gameState->cameraPos.x;
-                    renderP.y -= gameState->cameraPos.y;
-                    renderP.x += 0.5f*chunkScale.x - 0.5f;
-                    renderP.y += 0.5f*chunkScale.y - 0.5f;
-                    renderP.z = RENDER_Z;
-                    float4 color = make_float4(1, 1, 1, 1); //make_float4(c->y % 2 ? 1 : 0, c->x % 2 ? 1 : 0, 1, 1)
-                    pushTexture(renderer, gameState->backgroundTexture.handle, renderP, chunkScale, color, make_float4(0, 0, 1, 1));
-                    
-                    renderChunkDecor(gameState, renderer, c);
-                } 
-                // else if(c->generateState & CHUNK_GENERATED) {
-                //     float2 chunkInPixels = make_float2(chunkScale.x*TILE_WIDTH_PIXELS, chunkScale.y*TILE_WIDTH_PIXELS);
-                //     c->texture = platform_createFramebuffer(chunkInPixels.x, chunkInPixels.y);
-                //     assert(c->texture.framebuffer > 0);
-                //     pushRenderFrameBuffer(renderer, c->texture.framebuffer);
-                //     pushClearColor(renderer, make_float4(1, 1, 1, 0));
-
-                //     pushMatrix(renderer, make_ortho_matrix_bottom_left_corner(chunkScale.x, chunkScale.y, MATH_3D_NEAR_CLIP_PlANE, MATH_3D_FAR_CLIP_PlANE));
-                //     pushViewport(renderer, make_float4(0, 0, chunkInPixels.x, chunkInPixels.y));
-                //     renderer_defaultScissors(renderer, chunkInPixels.x, chunkInPixels.y);
-
-                //     pushTileEntityTexture(renderer, gameState->backgroundTexture.handle, make_float3(0.5f*chunkScale.x, 0.5f*chunkScale.y, 0), chunkScale, make_float4(1, 1, 1, 1), make_float4(0, 0, 1, 1), getSortIndex(make_float3(0, 0, 0), RENDER_LAYER_1), 0);
-                  
-                //     sortAndRenderTileQueue(renderer);
-
-                //     //NOTE: Restore the regular render state
-                //     pushRenderFrameBuffer(renderer, 0);
-                //     pushMatrix(renderer, fovMatrix);
-                //     pushViewport(renderer, make_float4(0, 0, windowScale.x, windowScale.y));
-                //     renderer_defaultScissors(renderer, windowScale.x, windowScale.y);
+                // for(int i = 0; i < CHUNK_DIM; i++) {
+                //     Chunk *c = getChunk(gameState, &gameState->lightingOffsets, &gameState->animationState, &gameState->textureAtlas, 1, 0, 0, true, false);
+                //     c->tiles[i*CHUNK_DIM + 0].flags &= ~TILE_FLAG_WALKABLE;
                 // }
+                float2 chunkScale = make_float2(CHUNK_DIM, CHUNK_DIM);
+                //NOTE: Render this tile
+                float3 worldP = getChunkWorldP(c);
+                float3 renderP = worldP;
+                renderP.x -= gameState->cameraPos.x;
+                renderP.y -= gameState->cameraPos.y;
+                renderP.x += 0.5f*chunkScale.x - 0.5f;
+                renderP.y += 0.5f*chunkScale.y - 0.5f;
+                renderP.z = RENDER_Z;
+                float4 color = make_float4(1, 1, 1, 1); //make_float4(c->y % 2 ? 1 : 0, c->x % 2 ? 1 : 0, 1, 1)
+                pushTexture(renderer, gameState->backgroundTexture.handle, renderP, chunkScale, color, make_float4(0, 0, 1, 1));
+
+                for(int y = 0; y < CHUNK_DIM; ++y) {
+                    for(int x = 0; x < CHUNK_DIM; ++x) {
+                        Tile *tile = &c->tiles[y*CHUNK_DIM + x];
+
+                        float3 worldP = getChunkWorldP(c);
+                        worldP.x += x;
+                        worldP.y += y;
+
+                        float3 renderP = worldP;
+                        renderP.x -= gameState->cameraPos.x;
+                        renderP.y -= gameState->cameraPos.y;
+                        renderP.z = RENDER_Z;
+
+                        if(!(tile->flags & TILE_FLAG_WALKABLE)) {
+                            // pushTexture(renderer, global_white_texture, renderP, make_float2(1, 1), make_float4(1, 0, 0, 1), make_float4(0, 0, 1, 1));
+                        }
+                    }
+                }
+            
             }
         }
     }
@@ -326,6 +320,76 @@ void pushEntityLight(GameState *gameState, Entity *e, float dt) {
     }
 }
 
+void updateEntityMovement(GameState *gameState, Entity *e, float dt) {
+    //NOTE: Clear the move cycles
+    while(e->moves) {
+        EntityMove *temp = e->moves;
+        e->moves = temp->next;
+        
+        temp->next = gameState->freeEntityMoves;
+        gameState->freeEntityMoves = temp;
+    }
+    
+     if(e->targetEntityId != 0) {
+        float3 targetPosition = {};
+        Entity *targetEntity = 0;
+        bool setPosition = false;
+        if(e->targetEntityId > 0) {
+             targetEntity = findEntityById(gameState, e->targetEntityId);
+            if(targetEntity) {
+                setPosition = true;
+                targetPosition = targetEntity->pos;
+            }
+        } else {
+            setPosition = true;
+            targetPosition = e->targetPos;
+        }
+            
+        if(setPosition) {
+            //NOTE: Path find towards the entity
+            MemoryArenaMark mark = takeMemoryMark(&globalPerFrameArena);
+
+            FloodFillResult searchResult = floodFillSearch(gameState, convertRealWorldToBlockCoords(e->pos), convertRealWorldToBlockCoords(targetPosition), e->maxMoveDistance);
+
+            if(searchResult.foundNode) {
+                renderAndAddMovePositionsFromBoardAstar(gameState, searchResult, e, true);
+            } 
+            
+            releaseMemoryMark(&mark);
+        }
+
+        //NOTE: Update the entity move cycle
+        if(e->moves != 0) {
+            float3 lastP = convertRealWorldToBlockCoords(e->pos); 
+
+            float3 target = e->moves->move;
+            float3 dir = normalize_float3(minus_float3(target, e->pos));
+            float speed = e->speed*dt;
+            e->pos = plus_float3(scale_float3(speed, dir), e->pos);
+
+            if(float3_magnitude(minus_float3(target, e->pos)) < 0.1f) {
+                e->pos = target;
+                EntityMove *move = e->moves;
+                //NOTE: Move to the next in the list
+                e->moves = move->next;
+
+                //NOTE: Add to the free list
+                move->next = gameState->freeEntityMoves;
+                gameState->freeEntityMoves = move;
+            }
+
+            float3 currentP = convertRealWorldToBlockCoords(e->pos); 
+
+            if(!sameFloat3(currentP, lastP)) {
+                markBoardAsEntityOccupied(gameState, currentP);
+                markBoardAsEntityUnOccupied(gameState, lastP);
+            }
+
+            assert(tileIsOccupied(gameState, currentP));
+        }
+    }
+}
+
 void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt, float3 mouseWorldP) {
     DEBUG_TIME_BLOCK();
     if(!(e->flags & ENTITY_ACTIVE)) {
@@ -337,22 +401,10 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
 
     refreshParticlers(gameState, e);
 
-
-    if(e->targetEntityId > 0) {
-        Entity *targetEntity = findEntityById(gameState, e->targetEntityId);
-        if(targetEntity) {
-            //NOTE: Path find towards the entity
-            
-        }
-    }
+   updateEntityMovement(gameState, e, dt);
 
     if(e->flags & ENTITY_ATTACK_PLAYER) {
         if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->spawnPosition.xy)) < e->homeDistance) {
-            // float2 impluse = normalize_float2(minus_float2(gameState->player->pos.xy, e->pos.xy));
-            // impluse = scale_float2(e->speed, impluse); 
-
-            // e->velocity.xy = plus_float2(e->velocity.xy, impluse);
-
             e->targetEntityId = gameState->player->id;
         } else {
             e->targetEntityId = 0;
@@ -690,6 +742,15 @@ void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool
 				}
 			}
 		}
+
+        if(clicked) {
+            // if(gameState->selectedEntityCount == 0) {
+                gameState->player->targetPos = make_float3(worldMousePLvl0.x, worldMousePLvl0.y, 0);
+                gameState->player->targetEntityId = -1;
+            // } else {
+            //     gameState->player->targetEntityId = gameState->selectedEntityIds[0].id;
+            // }
+        }
 	} 
 }
 
@@ -711,7 +772,7 @@ void renderAllDamageSplats(GameState *gameState) {
 }
 
 void updateTimeOfDay(GameState *gameState, float dt) {
-    gameState->renderer.dayNightValue += 0.01f*dt;
+    gameState->renderer.dayNightValue += DAYLIGHT_SPEED*dt;
     while(gameState->renderer.dayNightValue > 1.0f) {
         gameState->renderer.dayNightValue -= 1.0f;
     }
@@ -747,14 +808,6 @@ void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt,
 
 	bool clicked = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0;
 	bool endMove = gameState->selectedEntityCount > 0 && clicked;
-
-	if(gameState->selectedMoveCount == gameState->selectedEntityCount) {
-		for(int i = 0; i < gameState->selectedEntityCount; ++i) {
-			SelectedEntityData *data = gameState->selectedEntityIds + i;
-			assert(data->isValidPos);
-			addMovePositionsFromBoardAstar(gameState, data->floodFillResult, data->e, endMove);
-		}
-	}
 
 	updateParticlers(renderer, gameState, &gameState->particlers, dt);
 

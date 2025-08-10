@@ -200,6 +200,7 @@ static void initRenderer(Renderer *r) {
 	r->totalTime = 0;
 	r->entityRenderCount = 0;
 	r->tileEntityRenderCount = 0;
+	r->dayNightValue = 0.5f;
 }
 
 static void clearRenderer(Renderer *r) {

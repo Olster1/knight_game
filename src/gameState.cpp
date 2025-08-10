@@ -139,7 +139,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../images/entities/man.png", 32, 72, 1, 0, 0);
 
-			loadImageStripXY(&gameState->alderTreeAnimations[0].idle, backendRenderer, "../images/entities/alder/alder.png", 104, 162, 1, 0, 0);
+			loadImageStripXY(&gameState->alderTreeAnimations[0].idle, backendRenderer, "../images/entities/alder/tree.png", 108, 144, 1, 0, 0);
 			loadImageStripXY(&gameState->alderTreeAnimations[0].dead, backendRenderer, "../images/entities/tree stump.png", 104, 162, 1, 0, 0);
 			loadImageStripXY(&gameState->alderTreeAnimations[0].fallen, backendRenderer, "../images/entities/fallentree.png", 162, 104, 1, 0, 0);
 

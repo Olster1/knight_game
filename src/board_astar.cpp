@@ -13,7 +13,7 @@ void pushOnFloodFillQueue(GameState *gameState, FloodFillEvent *queue, bool *vis
 		if(c) {
 			float3 tileP = getChunkLocalPos(x, y, z);
 			Tile *tile = c->getTile(tileP.x, tileP.y, tileP.z);
-			if(tile && (tile->flags & TILE_FLAG_WALKABLE)) { //(tile->entityOccupation == 0 || sameFloat3(make_float3(x, y, z), startP))
+			if(tile && (tile->flags & TILE_FLAG_WALKABLE)) {
 				
 				FloodFillEvent *node = pushStruct(&globalPerFrameArena, FloodFillEvent);
 				node->x = x;
@@ -84,6 +84,12 @@ FloodFillResult floodFillSearch(GameState *gameState, float3 startP, float3 goal
 				pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x, y + 1, z, origin, startP);
 				pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x - 1, y, z, origin, startP);
 				pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x, y - 1, z, origin, startP);
+
+
+				// pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x + 1, y + 1, z, origin, startP);
+				// pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x - 1, y + 1, z, origin, startP);
+				// pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x - 1, y - 1, z, origin, startP);
+				// pushOnFloodFillQueue(gameState, queue, visited, cameFrom, cameFromThisTile, x + 1, y - 1, z, origin, startP);
 				
 			}
 		} else {
@@ -103,6 +109,14 @@ FloodFillResult floodFillSearch(GameState *gameState, float3 startP, float3 goal
 		int pathCount = 0;
 		while(building && pathCount <= maxMoveDistance) {
 			if(result.cameFrom->p.x == startP.x && result.cameFrom->p.y == startP.y && result.cameFrom->p.z == startP.z) {
+				//NOTE: Pop the last off so we're not starting on the original square. Otherwise the entity won't move since
+				//		it's calculated every frame
+				result.cameFrom = result.cameFrom->next;
+
+				if(!result.cameFrom) {
+					result.foundNode = 0;
+				}
+
 				building = false;
 			} else {
 				NodeDirection *f = pushStruct(&globalPerFrameArena, NodeDirection);

@@ -597,7 +597,7 @@ void refreshParticlers(GameState *gameState, Entity *e) {
     }
 }
 
-void addMovePositionsFromBoardAstar(GameState *gameState, FloodFillResult searchResult, Entity *e, bool endMove) {
+void renderAndAddMovePositionsFromBoardAstar(GameState *gameState, FloodFillResult searchResult, Entity *e, bool commit) {
     //NOTE: Path is a sentinel doubley linked list
     NodeDirection *d = searchResult.cameFrom;
     assert(d);
@@ -633,7 +633,7 @@ void addMovePositionsFromBoardAstar(GameState *gameState, FloodFillResult search
         }
         */
 
-        if(endMove) {
+        if(commit) {
             //NOTE: Move the entities
             EntityMove *move = 0;
             if(gameState->freeEntityMoves) {

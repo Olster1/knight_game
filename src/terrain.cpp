@@ -12,14 +12,6 @@ CubeVertex make_cube_vertex(float3 pos, float3 normal) {
     return result;
 }
 
-
-// static Vertex global_quadData[] = {
-//     makeVertex(make_float3(0.5f, -0.5f, 0), make_float2(1, 1)),
-//     makeVertex(make_float3(-0.5f, -0.5f, 0), make_float2(0, 1)),
-//     makeVertex(make_float3(-0.5f,  0.5f, 0), make_float2(0, 0)),
-//     makeVertex(make_float3(0.5f, 0.5f, 0), make_float2(1, 0)),
-// };
-
 static CubeVertex global_cubeData[] = {
     // Top face (z = 1.0f)
     make_cube_vertex(make_float3(0.5f, -0.5f, 0.5f), make_float3(0, 0, 1)),
@@ -34,9 +26,9 @@ static CubeVertex global_cubeData[] = {
 };
 
 int getMapHeight(float worldX, float worldY) {
-    float maxHeight = 3.0f;
-    int height = round(maxHeight*mapSimplexNoiseTo11(SimplexNoise_fractal_2d(8, 0.4*round(worldX), 0.4*round(worldY), 0.03f)));
-    return height;
+    // float maxHeight = 3.0f;
+    // int height = round(maxHeight*mapSimplexNoiseTo11(SimplexNoise_fractal_2d(8, 0.4*round(worldX), 0.4*round(worldY), 0.03f)));
+    return 0;
 }
 
 TileType getLandscapeValue(int worldX, int worldY, int worldZ) {
@@ -226,17 +218,21 @@ Entity *addAlderTreeEntity(GameState *state, float3 worldP);
 Entity *addBearEntity(GameState *state, float3 worldP);
 Entity *addGhostEntity(GameState *state, float3 worldP);
 
-void addTreeIfHasTree(GameState *state, int worldX, int worldY) {
+u32 addTreeIfHasTree(GameState *state, int worldX, int worldY) {
+    u32 flags = TILE_FLAG_WALKABLE;
     DEBUG_TIME_BLOCK()
     WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 8, 7);
 
     if(info.valid) {
         if(info.randomValue < 0.3f) {
             addAshTreeEntity(state, make_float3(worldX, worldY, 0));
+            flags = 0;
         } else if(info.randomValue < 1) {
             addAlderTreeEntity(state, make_float3(worldX, worldY, 0));
+            flags = 0;
         }
     }
+    return flags;
 }
 
 bool hasBearEntity(int worldX, int worldY) {
@@ -308,12 +304,13 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
     int chunkWorldY = roundChunkCoord(chunkP.y);
     int chunkWorldZ = roundChunkCoord(chunkP.z);
 
-    // char *decorNames[] = {"bush1.png", "bush2.png", "bush4.png", "bush5.png",};
-      
     for(int y = 0; y < CHUNK_DIM; ++y) {
         for(int x = 0; x < CHUNK_DIM; ++x) {
             int worldX = chunkWorldX + x;
             int worldY = chunkWorldY + y;
+
+            Tile *tile = &chunk->tiles[y*CHUNK_DIM + x];
+            u32 flags = TILE_FLAG_WALKABLE;
 
             if(hasBearEntity(worldX, worldY)) {
                 addBearEntity(gameState, make_float3(worldX, worldY, 0));
@@ -321,137 +318,17 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
             if(hasGhostEntity(worldX, worldY)) {
                 assert(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
                 addGhostEntity(gameState, make_float3(worldX, worldY, 0));
+                assert(tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
             }
+
             if(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0))){
-                addTreeIfHasTree(gameState, worldX, worldY);
+                flags = addTreeIfHasTree(gameState, worldX, worldY);
             }
 
-    //             TileType type = getLandscapeValue(worldX, worldY, worldZ);
-
-    //             if(type == TILE_TYPE_SOLID) {
-    //                 Animation *animation = 0;
-    //                 TileMapCoords tileCoords = {};
-    //                 TileMapCoords tileCoordsSecondary = {};
-    //                 u32 flags = 0;
-    //                 u32 lightingMask = calculateLightingMask(worldX, worldY, worldZ, lightingOffsets);
-
-    //                 u8 bits = 0;
-    //                 if (getLandscapeValue(worldX, worldY + 1, worldZ) == TILE_TYPE_SOLID) bits |= 1 << 0;
-    //                 if (getLandscapeValue(worldX, worldY - 1, worldZ) == TILE_TYPE_SOLID) bits |= 1 << 1;
-    //                 if (getLandscapeValue(worldX + 1, worldY, worldZ) == TILE_TYPE_SOLID) bits |= 1 << 2;
-    //                 if (getLandscapeValue(worldX - 1, worldY, worldZ) == TILE_TYPE_SOLID) bits |= 1 << 3;
-
-    //                 if(worldZ == 0) {
-    //                     animation = &animationState->waterAnimation;
-    //                     tileCoords = global_tileLookup[bits];
-    //                     tileCoords.x += 5;
-    //                     type = TILE_TYPE_BEACH;
-
-                     
-
-    //                 } else if(worldZ > 0) {
-    //                     // type = TILE_TYPE_NONE;
-    //                     tileCoords = global_tileLookup_elevated[bits];
-    //                     tileCoords.x += 10;
-    //                     tileCoordsSecondary = global_tileLookup[bits];
-    //                     flags |= TILE_FLAG_SHADOW;
-    //                     type = TILE_TYPE_ROCK;
-    //                     if(bits == 0b0101 || bits == 0b1101 || bits == 0b1001 || bits == 0b0001 || 
-    //                         bits == 0b0000 || bits == 0b0100 || bits == 0b1000 || bits == 0b1100) {
-    //                         flags |= TILE_FLAG_FRONT_FACE;
-
-    //                         //NOTE: Now check whether it should have dirt at the front 
-    //                         if(getLandscapeValue(worldX, worldY - 1, worldZ - 1) == TILE_TYPE_SOLID) {
-    //                             if((worldZ - 1) == 0) {
-    //                                 flags |= TILE_FLAG_FRONT_BEACH;
-    //                             } else if(hasGrassyTop(worldX, worldY - 1, worldZ - 1)) {
-    //                                 flags |= TILE_FLAG_FRONT_GRASS;
-    //                             }
-    //                         }
-                            
-    //                     }
-
-    //                     if(hasGrassyTop(worldX, worldY, worldZ)) {
-    //                         flags |= TILE_FLAG_GRASSY_TOP;
-                            
-
-    //                         //NOTE: Get new bits based on whether grass is next to it
-    //                         u8 bits2 = 0;
-    //                         if (hasGrassyTop(worldX, worldY + 1, worldZ) && (bits & (1 << 0))) bits2 |= 1 << 0;
-    //                         if (hasGrassyTop(worldX, worldY - 1, worldZ) && (bits & (1 << 1))) bits2 |= 1 << 1;
-    //                         if (hasGrassyTop(worldX + 1, worldY, worldZ) && (bits & (1 << 2))) bits2 |= 1 << 2;
-    //                         if (hasGrassyTop(worldX - 1, worldY, worldZ) && (bits & (1 << 3))) bits2 |= 1 << 3;
-        
-    //                         tileCoordsSecondary = global_tileLookup[bits2];
-
-    //                         // if(hasTree(worldX, worldY, worldZ)) {
-    //                         //     assert(worldZ > 0);
-    //                         //     assert(chunk->treeSpriteCount < arrayCount(chunk->treeSpritesWorldP));
-    //                         //     if(chunk->treeSpriteCount < arrayCount(chunk->treeSpritesWorldP)) {
-    //                         //         chunk->treeSpritesWorldP[chunk->treeSpriteCount++] = make_float3(worldX, worldY, worldZ);
-    //                         //     }
-                        
-    //                         //     flags |= TILE_FLAG_TREE;
-    //                         // } 
-    //                     }
-    //                 }
-
-    //                 if(type != TILE_TYPE_NONE) {
-    //                     if(!(flags & TILE_FLAG_TREE)) {
-    //                         //NOTE: Can walk on this tile
-    //                         flags |= TILE_FLAG_WALKABLE;
-    //                     }
-    //                     chunk->tiles[z*CHUNK_DIM*CHUNK_DIM + y*CHUNK_DIM + x] = Tile(type, &animationState->animationItemFreeListPtr, animation, tileCoords, tileCoordsSecondary, flags, lightingMask);
-    //                 }
-
-    //                 //NOTE: Add decor item
-    //                 assert(chunk->decorSpriteCount < arrayCount(chunk->decorSprites));
-    //                 if(chunk->decorSpriteCount < arrayCount(chunk->decorSprites)) {
-                        
-    //                     int index = random_between_int(0, arrayCount(decorNames));
-    //                     assert(index < arrayCount(decorNames));
-
-    //                     float mapHeight = getMapHeight(worldX, worldY);
-
-    //                     if(mapHeight > 0 && mapHeight == worldZ && hasDecorBush(worldX, worldY, worldZ)) {
+            tile->flags |= flags;
             
-    //                         float3 worldP = {};
-                            
-    //                         worldP.x = random_between_float(-0.2f, 0.2f) + worldX;
-    //                         worldP.y = random_between_float(-0.2f, 0.2f) + worldY;
-    //                         worldP.z = mapHeight;
-                
-    //                         AtlasAsset *asset = 0;
-    //                         if(hasGrassyTop(round(worldP.x), round(worldP.y), worldP.z)) {
-    //                             asset = textureAtlas_getItem(textureAtlas, decorNames[index]);
-    //                         } else {
-    //                             asset = textureAtlas_getItem(textureAtlas, "rock.png");
-    //                         }
-    //                         assert(asset);
-                
-    //                         // if(worldP.z > 0) {
-    //                         //     DecorSprite *obj = chunk->decorSprites + chunk->decorSpriteCount++;
-    //                         //     obj->worldP = worldP;
-    //                         //     obj->uvs = asset->uv;
-    //                         //     obj->textureHandle = textureAtlas->texture.handle;
-    //                         //     float s = random_between_float(0.4f, 0.8f);
-    //                         //     obj->scale = make_float2(s, s);
-    //                         // }
-    //                     }
-    //                 }
-            
-                    
-    //             } else {
-    //                 bool waterRock = false;//isWaterRock(worldX, worldY, worldZ);
-
-    //                 if(waterRock) {
-    //                     TileMapCoords tileCoords = {};
-    //                     TileMapCoords tileCoordsSecondary = {};
-    //                     chunk->tiles[z*CHUNK_DIM*CHUNK_DIM + y*CHUNK_DIM + x] = Tile(TILE_TYPE_WATER_ROCK, &animationState->animationItemFreeListPtr, &animationState->waterRocks[0], tileCoords, tileCoordsSecondary, 0, 0);
-    //                 }
-                // }
-            }
         }
+    }
 
     chunk->generateState = CHUNK_GENERATED;
 

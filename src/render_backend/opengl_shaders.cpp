@@ -318,21 +318,15 @@ static char *pixelArtLightsFragShader =
         "discard;"
     "}"
 
-    "vec3 totalLight = vec3(dayNightValue);"
+    "vec3 totalLight = vec3(4*dayNightValue);"
 
     "for (int i = 0; i < lightCount; i++) {"
         "vec2 toLight = lights[i].position.xy - viewP.xy;"
         "float dist = length(toLight);"
 
-        // "float A = 2;"
-        // "float B = 0.1;"
-
-        // "dist = (dist - A) / (B - A);"
-
         "float attenuation = 1.0 / (dist * dist);"
-        // "float attenuation = clamp(dist, 0.0, 1.0);"
 
-        "totalLight +=  lights[i].color*vec3(3*attenuation);"
+        "totalLight +=  lights[i].color*vec3(attenuation);"
     "}"
 
     "vec3 mapped = totalLight / (totalLight + vec3(1.0));"

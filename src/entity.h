@@ -156,6 +156,7 @@ struct Entity {
     u64 flags;
 
     int targetEntityId;
+    float3 targetPos; //NOTE: If targetEntityId == -1, use this target position
 
     //NOTE: TRANSFORM component
     float3 pos;
