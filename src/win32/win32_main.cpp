@@ -899,6 +899,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstPrev, PSTR cmdline, int
         globalPerFrameArena = initMemoryArena(Kilobytes(100));
         global_perFrameArenaMark = takeMemoryMark(&globalPerFrameArena);
 
+        globalPerEntityLoadArena = initMemoryArena(Megabytes(10));
+        global_perEntityLoadArenaMark = takeMemoryMark(&globalPerEntityLoadArena);
+
         int window_xAt = CW_USEDEFAULT;
         int window_yAt = CW_USEDEFAULT;
 

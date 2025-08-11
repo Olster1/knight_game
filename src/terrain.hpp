@@ -73,7 +73,7 @@ struct Tile {
         this->lightingMask = lightingMask;
         if(type == TILE_TYPE_BEACH || type == TILE_TYPE_WATER_ROCK) {
             assert(animation);
-            animationController = pushStruct(&global_long_term_arena, EasyAnimation_Controller);
+            animationController = pushStruct(&globalPerEntityLoadArena, EasyAnimation_Controller);
             easyAnimation_initController(animationController);
             EasyAnimation_ListItem *anim = easyAnimation_addAnimationToController(animationController, freeList, animation, 0.08f);
         }

@@ -30,6 +30,18 @@ void createAOOffsets(GameState *gameState) {
     }
 }
 
+void clearMemoryForEntityScene(GameState *gameState) {
+	gameState->freeEntityMoves = 0;
+	gameState->freeListDamageSplats = 0;
+	gameState->entityCount = 0;
+	gameState->particlers.particlerCount = 0;
+	gameState->terrain = Terrain();
+	gameState->gamePlay.boardInited = false;
+
+	releaseMemoryMark(&global_perEntityLoadArenaMark);
+	global_perEntityLoadArenaMark = takeMemoryMark(&globalPerEntityLoadArena);
+}	
+
 void initBuildingTextures(GameState *gameState) {
 	gameState->houseTexture =  textureAtlas_getItemAsTexture(&gameState->textureAtlas, "house.png");
 	easyAnimation_pushFrame(&gameState->houseAnimation, &gameState->houseTexture);
@@ -133,9 +145,15 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->smokeTextures[4] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff5.png");
 			
 
+			gameState->pressStartTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/press_start.png");
+			gameState->titleScreenWordsTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/title.png");
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/background.png");
+			gameState->titleScreenTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/titleScreen.png");
 			gameState->splatTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/splat.png");
 			gameState->inventoryTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/inventory.png");
+
+			gameState->gameModeFadeTimer = -1;
+			gameState->gameModeState = GAME_START_SCREEN_MODE;
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../images/entities/man.png", 32, 72, 1, 0, 0);
 
@@ -165,7 +183,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 			loadImageStripXY(&gameState->templerKnightAnimations.idle, backendRenderer, "../images/entities/knight.png", 32, 72, 1, 0, 0);
 
-			loadImageStripXY(&gameState->bearAnimations.idle, backendRenderer, "../images/entities/bear/bear.png", 128, 128, 1, 0, 0);
+			loadImageStripXY(&gameState->bearAnimations.idle, backendRenderer, "../images/entities/bear/bear.png", 73, 73, 1, 0, 0);
 			loadImageStripXY(&gameState->bearAnimations.dead, backendRenderer, "../images/entities/bear/beardown.png", 128, 128, 1, 0, 0);
 			loadImageStripXY(&gameState->bearAnimations.skinned, backendRenderer, "../images/entities/bear/bearskinned.png", 128, 128, 1, 0, 0);
 			loadImageStripXY(&gameState->bearAnimations.skeleton, backendRenderer, "../images/entities/bear/bearskeleton.png", 128, 128, 1, 0, 0);

@@ -1,3 +1,9 @@
+void playerDie(GameState *gameState, Entity *entity) {
+    gameState->gameModeFadeTimer = MAX_FADE_TIME;
+    gameState->gameModeFadeDirection = -1; //NOTE: Fade Out
+    gameState->targetGameMode = GAME_GAMEOVER_MODE;
+}
+
 void bearDie(GameState *gameState, Entity *entity) {
     easyAnimation_emptyAnimationContoller(&entity->animationController, &gameState->animationState.animationItemFreeListPtr);
     easyAnimation_addAnimationToController(&entity->animationController, &gameState->animationState.animationItemFreeListPtr, &entity->animations->dead, 0.08f);

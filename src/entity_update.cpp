@@ -403,6 +403,10 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
 
    updateEntityMovement(gameState, e, dt);
 
+    if(e->attackCooldown > 0) {
+        e->attackCooldown -= dt;
+    }
+
     if(e->flags & ENTITY_ATTACK_PLAYER) {
         if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->spawnPosition.xy)) < e->homeDistance) {
             e->targetEntityId = gameState->player->id;
@@ -410,13 +414,13 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
             e->targetEntityId = 0;
         }
 
-        if(e->attackCooldown > 0) {
-            e->attackCooldown -= dt;
-        }
-
         if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->pos.xy)) < 1 && e->attackCooldown <= 0) {
             float damage = random_between_int(1, 4);
             gameState->player->health -= damage;
+
+            if(gameState->player->health <= 0) {
+                playerDie(gameState, gameState->player);
+            }
 
             DamageSplat *d = getDamageSplat(gameState, gameState->player);
 
@@ -457,10 +461,12 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
                 
             }
 
-            if((attackEntity->flags & ENTITY_CAN_BE_ATTACKED) && easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->idle)) {
+            if(e->attackCooldown <= 0 && (attackEntity->flags & ENTITY_CAN_BE_ATTACKED) && easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->idle)) {
 
                 float damage = random_between_int(1, 4);
                 attackEntity->health -= damage;
+
+                e->attackCooldown = 1;
 
                 if(attackEntity->flags & ENTITY_SHOW_DAMAGE_SPLAT) {
 
@@ -481,7 +487,7 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
                         bearDie(gameState, attackEntity);
                     } else if(attackEntity->type == ENTITY_GHOST) {
                         ghostDie(gameState, attackEntity);
-                    }
+                    } 
                     
                 }
             }
@@ -525,7 +531,15 @@ void renderEntity(GameState *gameState, Renderer *renderer, Entity *e, float16 f
     } else {
         e->flags &= ~(ENTITY_SELECTED);
     }
-    
+
+    //NOTE: Check if is should be transparent
+    if(e->flags & ENTITY_GO_TRANSPARENT_FOR_PLAYER) {
+        float3 playerPos = convertRealWorldToBlockCoords(gameState->player->pos);
+        float3 ePos = convertRealWorldToBlockCoords(e->pos);
+        if(playerPos.x == ePos.x && (playerPos.y == (ePos.y + 1) || playerPos.y == (ePos.y + 2))) {
+            color.w = 0.4f;
+        }
+    }
 
     //NOTE: Draw position above player
     // float3 tileP = convertRealWorldToBlockCoords(e->pos);
@@ -743,7 +757,7 @@ void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool
 			}
 		}
 
-        if(clicked) {
+        if(global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].isDown) {
             // if(gameState->selectedEntityCount == 0) {
                 gameState->player->targetPos = make_float3(worldMousePLvl0.x, worldMousePLvl0.y, 0);
                 gameState->player->targetEntityId = -1;

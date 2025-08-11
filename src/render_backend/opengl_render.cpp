@@ -109,7 +109,7 @@ static TextureHandle *Platform_loadTextureToGPU(void *data, u32 texWidth, u32 te
     glBindTexture(GL_TEXTURE_2D, resultId);
     renderCheckError();
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     renderCheckError();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     renderCheckError();

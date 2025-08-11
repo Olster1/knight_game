@@ -272,7 +272,7 @@ bool isWaterRock(int worldX, int worldY, int worldZ) {
 
 Chunk *Terrain::generateChunk(int x, int y, int z, uint32_t hash, Memory_Arena *tempArena) {
     DEBUG_TIME_BLOCK()
-    Chunk *chunk = (Chunk *)pushStruct(&global_long_term_arena, Chunk);
+    Chunk *chunk = (Chunk *)pushStruct(&globalPerEntityLoadArena, Chunk);
     *chunk = Chunk(tempArena);
     assert(chunk);
     assert(!chunk->generatedMipMaps);

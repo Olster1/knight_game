@@ -51,7 +51,7 @@
 #include "debug.cpp"
 #include "init_board.cpp"
 #include "camera.cpp"
-
+#include "game_mode_render.cpp"
 
 static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float windowWidth, float windowHeight, bool should_save_settings, char *save_file_location_utf8_only_use_on_inititalize, Settings_To_Save save_settings_only_use_on_inititalize) {
 	DEBUG_TIME_BLOCK();
@@ -99,14 +99,25 @@ static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float
 	float fauxDimensionY = 1000;
 	float fauxDimensionX = fauxDimensionY * (windowWidth/windowHeight);
 
-	updatePlayerInput(gameState);
-	updateCamera(gameState, dt);
-
 	gameState->planeSizeY = (windowHeight / windowWidth) * gameState->planeSizeX;
 	float16 fovMatrix = make_ortho_matrix_origin_center(gameState->planeSizeX*gameState->zoomLevel, gameState->planeSizeY*gameState->zoomLevel, MATH_3D_NEAR_CLIP_PlANE, MATH_3D_FAR_CLIP_PlANE);
-	
-	updateAndRenderEntities(gameState, renderer, dt, fovMatrix, windowWidth, windowHeight);
-	drawGameUi(gameState, renderer, dt, windowWidth, windowHeight, mouseP_01);
+
+	if(gameState->gameModeState == GAME_START_SCREEN_MODE) {
+		updateAndRenderTitleScreen(gameState, dt);
+	} else if(gameState->gameModeState == GAME_GAMEOVER_MODE) {
+		updateAndRenderGameOverScreen(gameState, dt);
+	} else if(gameState->gameModeState == GAME_PLAY_MODE) {
+		updatePlayerInput(gameState);
+		updateCamera(gameState, dt);
+		updateAndRenderEntities(gameState, renderer, dt, fovMatrix, windowWidth, windowHeight);
+		drawGameUi(gameState, renderer, dt, windowWidth, windowHeight, mouseP_01);
+
+		pushMatrix(renderer, make_ortho_matrix_origin_center(gameState->planeSizeX, gameState->planeSizeY, MATH_3D_NEAR_CLIP_PlANE, MATH_3D_FAR_CLIP_PlANE));
+		pushShader(&gameState->renderer, &pixelArtShader);
+		float w = gameState->planeSizeX;
+		float h = gameState->planeSizeY;
+		updateFadeScreen(gameState, dt, w, h);
+	}
 
 #if DEBUG_BUILD
 	// drawDebugAndEditorText(gameState, renderer, fauxDimensionX, fauxDimensionY, windowWidth, windowHeight, dt, fovMatrix);

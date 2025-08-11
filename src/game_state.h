@@ -8,6 +8,13 @@ typedef enum {
 	EASY_PROFILER_DRAW_CLOSED,
 } EasyDrawProfile_OpenState;
 
+enum GameModeState {
+	GAME_MODE_STATE_NONE,
+	GAME_START_SCREEN_MODE,
+	GAME_PLAY_MODE,
+	GAME_GAMEOVER_MODE,
+};
+
 typedef struct {
 	int hotIndex;
 
@@ -74,6 +81,7 @@ typedef struct {
 	bool initialized;
 
 	GameMode gameMode;
+	
 	char *actionString;
 
 	float2 startDragPForSelect;
@@ -113,6 +121,11 @@ typedef struct {
 
 	float planeSizeX;
 	float planeSizeY;
+
+	GameModeState gameModeState;
+	GameModeState targetGameMode;
+	float gameModeFadeTimer;
+	int gameModeFadeDirection;
 
 	GamePlay gamePlay;
 
@@ -164,7 +177,10 @@ typedef struct {
 	PickupItemType placeItem;
 	
 	Inventory inventory;
-
+	Texture titleScreenTexture;
+	Texture pressStartTexture;
+	Texture titleScreenWordsTexture;
+	 
 	Texture smokeTextures[5];
 	Texture splatTexture;
 	Texture inventoryTexture;

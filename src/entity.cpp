@@ -17,16 +17,6 @@ void pushGameLight(Renderer *state, float3 viewPos, float3 color, float perlinNo
 	}
 }
 
-char *makeEntityId(GameState *gameState) {
-    u64 timeSinceEpoch = platform_getTimeSinceEpoch();
-    char *result = easy_createString_printf(&globalPerEntityLoadArena, "%ld-%d-%d", timeSinceEpoch, gameState->randomIdStartApp, gameState->randomIdStart);
-
-    //NOTE: This would have to be locked in threaded application
-    gameState->randomIdStart++;
-
-    return result;
-}  
-
 float16 getModelToWorldTransform(Entity *e_) {
     float16 result = float16_identity();
 
@@ -287,7 +277,7 @@ Entity *addAlderTreeEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_TREE;
-        e->flags |= ENTITY_CAN_BE_ATTACKED;
+        e->flags |= ENTITY_CAN_BE_ATTACKED | ENTITY_GO_TRANSPARENT_FOR_PLAYER;
         e->offsetP.y = 0.3; //NOTE: Fraction of the scale
         e->scale = make_float3(6.419f, 10, 1);
 
@@ -303,7 +293,7 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_TREE;
-        e->flags |= ENTITY_CAN_BE_ATTACKED;
+        e->flags |= ENTITY_CAN_BE_ATTACKED | ENTITY_GO_TRANSPARENT_FOR_PLAYER;
         e->offsetP.y = 0.3; //NOTE: Fraction of the scale
         e->scale = make_float3(6.419f, 10, 1);
 
@@ -641,7 +631,7 @@ void renderAndAddMovePositionsFromBoardAstar(GameState *gameState, FloodFillResu
                 gameState->freeEntityMoves = move->next;
                 move->next = 0;
             } else {
-                move = pushStruct(&global_long_term_arena, EntityMove);
+                move = pushStruct(&globalPerEntityLoadArena, EntityMove);
             }
             move->move = worldP;
             move->next = 0;
@@ -685,7 +675,7 @@ DamageSplat *getDamageSplat(GameState *gameState, Entity *e) {
         gameState->freeListDamageSplats = gameState->freeListDamageSplats->next;
         
     } else {
-        result = pushStruct(&global_long_term_arena, DamageSplat);
+        result = pushStruct(&globalPerEntityLoadArena, DamageSplat);
     }
 
     
