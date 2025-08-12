@@ -30,6 +30,7 @@
         "memory": "cpp",
         "deque": "cpp",
         "__split_buffer": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "stb_vorbis.c": "cpp"
     }
 }

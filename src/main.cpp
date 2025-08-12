@@ -1,7 +1,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "defines.h"
 #include "wl_memory.h"
 #include "save_settings.cpp"
 #include "file_helper.cpp"
@@ -19,7 +18,6 @@
 #include "dialog.cpp"
 #include "texture_atlas.cpp"
 #include "terrain.hpp"
-#include "gameplay.cpp"
 #include "board_astar.h"
 #include "inventory.cpp"
 #include "item_info.cpp"
@@ -66,9 +64,9 @@ static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float
 		global_perFrameArenaMark = takeMemoryMark(&globalPerFrameArena);
 	}
 
-	if(!gameState->gamePlay.boardInited) {
+	if(!gameState->gamePlayBoardInited) {
 		initPlayerBoard(gameState);
-		gameState->gamePlay.boardInited = true;
+		gameState->gamePlayBoardInited = true;
 	}
 
 	Renderer *renderer = &gameState->renderer;
@@ -118,6 +116,8 @@ static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float
 		float h = gameState->planeSizeY;
 		updateFadeScreen(gameState, dt, w, h);
 	}
+
+	updateSoundsFade(dt);
 
 #if DEBUG_BUILD
 	// drawDebugAndEditorText(gameState, renderer, fauxDimensionX, fauxDimensionY, windowWidth, windowHeight, dt, fovMatrix);

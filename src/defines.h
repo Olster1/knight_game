@@ -15,3 +15,4 @@
 #define RENDER_DISTANCE 3
 #define DAYLIGHT_SPEED (1.0f/(60.0f*24.0f))
 #define MAX_FADE_TIME 3
+

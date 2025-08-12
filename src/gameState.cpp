@@ -36,7 +36,7 @@ void clearMemoryForEntityScene(GameState *gameState) {
 	gameState->entityCount = 0;
 	gameState->particlers.particlerCount = 0;
 	gameState->terrain = Terrain();
-	gameState->gamePlay.boardInited = false;
+	gameState->gamePlayBoardInited = false;
 
 	releaseMemoryMark(&global_perEntityLoadArenaMark);
 	global_perEntityLoadArenaMark = takeMemoryMark(&globalPerEntityLoadArena);
@@ -118,8 +118,6 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->drawState = EasyProfiler_initProfilerDrawState();
 		}
 
-		gameState->gamePlay = init_gameplay();
-
 		
 		{
 			DEBUG_TIME_BLOCK_NAMED("LOAD TEXTURES");
@@ -154,6 +152,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 			gameState->gameModeFadeTimer = -1;
 			gameState->gameModeState = GAME_START_SCREEN_MODE;
+			
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../images/entities/man.png", 32, 72, 1, 0, 0);
 
@@ -202,7 +201,12 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 		//TODO: Probably save this each time we leave the app
 		gameState->zoomLevel = 1.8f;
 
-		// addToInventory(&gameState->inventory, PICKUP_ITEM_BEAR_PELT);
+		initAudioSpec(&gameState->audioSpec, 44100);
+		initAudio(&gameState->audioSpec);
+
+		// loadWavFile(&gameState->titleScreenSound, , &gameState->audioSpec);
+		loadOggVorbisFile(&gameState->titleScreenSound, "../sounds/title_sound.ogg", &gameState->audioSpec);
+		gameState->titlePagePlayingSound = playSound(&gameState->titleScreenSound);
 
 		
 	// DefaultEntityAnimations barrellAnimations;

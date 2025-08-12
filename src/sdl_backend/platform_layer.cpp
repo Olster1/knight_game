@@ -14,9 +14,6 @@
 #include "../../libs/tinyfiledialogs.h"
 #include "../../libs/tinyfiledialogs.c"
 
-
-// #include "./win32/win32_threads.cpp"
-
 static DEBUG_stats global_debug_stats = {};
 
 static SDL_Window *global_wndHandle;
@@ -361,6 +358,7 @@ static bool Platform_LoadEntireFile_utf8(char *filename_utf8, void **data, size_
 #include "../3DMaths.h"
 #include "../render.c"
 #include "../render_backend/opengl_render.cpp"
+#include "./sdl_sound.cpp"
 #include "../main.cpp"
 
 int GetDpiForWindow() {
@@ -435,17 +433,13 @@ int main(int argc, char **argv) {
         //         window_yAt = (LONG)settings_to_save.window_yAt;
         //     }
         // }
-
+        
 
         //Now create the actual window
-        global_wndHandle = SDL_CreateWindow("Knight Game",  SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, flags);
-
+        global_wndHandle = SDL_CreateWindow("Iron Quest",  SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, flags);
         assert(global_wndHandle);
-
         SDL_RaiseWindow(global_wndHandle);
     }
-
-    
     
     
     //TODO: Change to using memory arena? 

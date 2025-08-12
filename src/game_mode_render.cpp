@@ -72,5 +72,8 @@ void updateAndRenderTitleScreen(GameState *gameState, float dt) {
         gameState->gameModeFadeTimer = MAX_FADE_TIME;
         gameState->gameModeFadeDirection = -1; //NOTE: Fade Out
         gameState->targetGameMode = GAME_PLAY_MODE;
+        if(gameState->titlePagePlayingSound) {
+            gameState->titlePagePlayingSound->maxFadeOutTimer = gameState->titlePagePlayingSound->fadeOutTimer = 3;
+        } 
     }
 }

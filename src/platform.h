@@ -5,6 +5,7 @@
 
 #include <stdint.h> //for the type uint8_t for our text input buffer
 #include <stdio.h>
+#include "defines.h"
 
 #define Megabytes(value) value*1000*1000
 #define Kilobytes(value) value*1000

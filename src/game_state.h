@@ -90,6 +90,9 @@ typedef struct {
 	int selectedEntityCount;
 	SelectedEntityData selectedEntityIds[32];
 
+	PlatformAudioSpec audioSpec;
+	bool gamePlayBoardInited;
+
 	//NOTE: For creating unique entity ids like MongoDb ObjectIds
 	int randomIdStartApp;
 	int randomIdStart;
@@ -111,6 +114,8 @@ typedef struct {
 
 	Entity *player;	
 
+	PlayingSound *titlePagePlayingSound;
+
 	float scrollDp;
 
 	int entityCount;
@@ -127,7 +132,8 @@ typedef struct {
 	float gameModeFadeTimer;
 	int gameModeFadeDirection;
 
-	GamePlay gamePlay;
+
+	GameSoundAsset titleScreenSound;
 
 	Texture bannerTexture;
 	Texture selectTexture;

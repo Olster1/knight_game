@@ -88,12 +88,9 @@ void drawScrollText(char *text, GameState *gameState, Renderer *renderer, float2
 
 void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float windowWidth, float windowHeight, float2 mouseP_01){
 	DEBUG_TIME_BLOCK();
-    GamePlay *play = &gameState->gamePlay;
 
     bool clicked = global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0;
     
-    play->turnTime += dt;
-
     float aspectRatio_yOverX = windowHeight / windowWidth;
     float fuaxWidth = 100;
 	float2 resolution = make_float2(fuaxWidth, fuaxWidth*aspectRatio_yOverX);
@@ -157,30 +154,6 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
         draw_text(renderer, &gameState->font, gameState->currentItemInfo.description, pos.x + 0.5f*offset.x, (pos.y - get_scale_rect2f(boundsTitle).y) - 0.5f*offset.y, fontSizeDesc, make_float4(0, 0, 0, 1), marginX); 
     }
 
-    //NOTE: Draw the player logo
-    {
-        Texture *l = 0;
-        Texture *b = 0;
-        if(play->turnOn == GAME_TURN_PLAYER_KNIGHT) {
-            l = &gameState->kLogoText;
-            b = &gameState->blueText;
-        } else {
-            l = &gameState->gLogoText;
-            b = &gameState->redText;
-        }
-
-        pushShader(renderer, &pixelArtShader);
-        float2 s = make_float2(10, 10);
-        float2 s1 = make_float2(7, 7);
-        float2 pos = getUiPosition(make_float2(0, 1), UI_ANCHOR_CENTER_TOP, make_float2(0, 0.5f*s.y), resolution);
-        float3 p = make_float3(pos.x, pos.y, UI_Z_POS);
-        float3 p1 = p;
-        p1.y += 0.5f;
-        // pushTexture(renderer, gameState->shadowUiTexture.handle, p, s, make_float4(1, 1, 1, 0.3), gameState->shadowUiTexture.uvCoords);
-        // pushTexture(renderer, b->handle, p, s, make_float4(1, 1, 1, 1), b->uvCoords);
-        // pushTexture(renderer, l->handle, p1, s1, make_float4(1, 1, 1, 1), l->uvCoords);
-
-    }
     {
         float3 mouseP = make_float3(mousex, mousey, UI_Z_POS);
         float2 s = scale_float2(3, make_float2(5.9f, 10));
@@ -211,31 +184,6 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
     }
     
     {
-        char *text = "";
-        switch (play->phase) {
-            case GAME_TURN_PHASE_COMMAND: {
-                text = "COMMAND";
-            } break;
-            case GAME_TURN_PHASE_MOVE: {
-                text = "MOVE";
-            } break;
-            case GAME_TURN_PHASE_SHOOT: {
-                text = "SHOOT";
-            } break;
-            case GAME_TURN_PHASE_CHARGE: {
-                text = "CHARGE";
-            } break;
-            case GAME_TURN_PHASE_FIGHT: {
-                text = "FIGHT";
-            } break;
-            case GAME_TURN_PHASE_BATTLESHOCK: {
-                text = "BATTLESHOCK";
-            } break;
-            default: {
-
-            } break;
-        }
-
         // drawScrollText(text, gameState, renderer, make_float2(0, 1), UI_ANCHOR_CENTER_BOTTOM, resolution);
     }
     
