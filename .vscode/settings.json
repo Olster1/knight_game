@@ -31,6 +31,8 @@
         "deque": "cpp",
         "__split_buffer": "cpp",
         "initializer_list": "cpp",
-        "stb_vorbis.c": "cpp"
+        "stb_vorbis.c": "cpp",
+        "tinyfiledialogs.h": "c",
+        "cstdio": "cpp"
     }
 }

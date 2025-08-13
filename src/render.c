@@ -1,8 +1,8 @@
 struct TextureHandle {
-#ifdef __APPLE__
-	u32 handle;
-#else 
+#ifdef USE_D3D_BACKEND
 	void *handle;
+#else 
+	u32 handle;
 #endif 
 };
 static TextureHandle* global_white_texture;

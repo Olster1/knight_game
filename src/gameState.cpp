@@ -146,7 +146,10 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->pressStartTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/press_start.png");
 			gameState->titleScreenWordsTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/title.png");
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/background.png");
-			gameState->titleScreenTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/titleScreen.png");
+			gameState->titleScreenTexture[0] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/titleScreen.png");
+			gameState->titleScreenTexture[1] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/titleScreen1.png");
+			gameState->titleScreenTexture[2] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/titleScreen2.png");
+			gameState->titleScreenTexture[3] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/game_over_screen.png");
 			gameState->splatTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/splat.png");
 			gameState->inventoryTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/inventory.png");
 

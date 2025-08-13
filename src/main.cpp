@@ -101,7 +101,7 @@ static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float
 	float16 fovMatrix = make_ortho_matrix_origin_center(gameState->planeSizeX*gameState->zoomLevel, gameState->planeSizeY*gameState->zoomLevel, MATH_3D_NEAR_CLIP_PlANE, MATH_3D_FAR_CLIP_PlANE);
 
 	if(gameState->gameModeState == GAME_START_SCREEN_MODE) {
-		updateAndRenderTitleScreen(gameState, dt);
+		updateAndRenderTitleScreen(gameState, dt, mouseP_01);
 	} else if(gameState->gameModeState == GAME_GAMEOVER_MODE) {
 		updateAndRenderGameOverScreen(gameState, dt);
 	} else if(gameState->gameModeState == GAME_PLAY_MODE) {

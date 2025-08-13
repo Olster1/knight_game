@@ -418,7 +418,7 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
             float damage = random_between_int(1, 4);
             gameState->player->health -= damage;
 
-            if(gameState->player->health <= 0) {
+            if(gameState->player->health <= 0 && gameState->targetGameMode != GAME_GAMEOVER_MODE) {
                 playerDie(gameState, gameState->player);
             }
 

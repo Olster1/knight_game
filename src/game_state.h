@@ -183,7 +183,7 @@ typedef struct {
 	PickupItemType placeItem;
 	
 	Inventory inventory;
-	Texture titleScreenTexture;
+	Texture titleScreenTexture[4];
 	Texture pressStartTexture;
 	Texture titleScreenWordsTexture;
 	 

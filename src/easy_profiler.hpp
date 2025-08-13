@@ -7,23 +7,27 @@ DEBUG_TIME_BLOCK_NAMED(name); //this is if you want to profile just a block
 */
 #define EASY_PROFILER_ON 1
 
+#if defined(__aarch64__) || defined(_M_ARM64)
+typedef unsigned long long u64;
 
-// SPDX-License-Identifier: GPL-2.0
-u64 _rdtsc(void)
+u64 _rdtsc()
 {
     u64 val;
 
-    /*
-     * According to ARM DDI 0487F.c, from Armv8.0 to Armv8.5 inclusive, the
-     * system counter is at least 56 bits wide; from Armv8.6, the counter
-     * must be 64 bits wide.  So the system counter could be less than 64
-     * bits wide and it is attributed with the flag 'cap_user_time_short'
-     * is true.
-     */
     asm volatile("mrs %0, cntvct_el0" : "=r" (val));
 
     return val;
 }
+#else
+#include <x86intrin.h> // For __rdtsc() on x86/x86_64
+
+typedef unsigned long long u64;
+
+u64 _rdtsc()
+{
+    return __rdtsc();
+}
+#endif
 
 typedef enum {
 	EASY_PROFILER_PUSH_SAMPLE,

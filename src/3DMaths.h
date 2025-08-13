@@ -1,15 +1,19 @@
 #include <float.h> //NOTE: For FLT_MAX
+#ifdef _WIN32
+#else
 #include <arm_acle.h>
+#endif
+
 
 #define PI32 3.14159265358979
 #define SIN45 0.70710678118
 #define TAU32 6.283185307
 #define HALF_PI32 0.5f*PI32
 
-#ifdef __APPLE__
-#define D3D_MATRIX 0 //NOTE: Whether to use D3D or OpenGL matrix
-#else
+#ifdef USE_D3D_BACKEND
 #define D3D_MATRIX 1 //NOTE: Whether to use D3D or OpenGL matrix
+#else
+#define D3D_MATRIX 0 //NOTE: Whether to use D3D or OpenGL matrix
 #endif
 
 // #define INT_MAX 2147483647
@@ -978,9 +982,11 @@ float16 eulerAnglesToTransform(float y, float x, float z) {
 uint32_t get_crc32(char *bytes, size_t bytes_length) {
 	uint32_t result = 0;
 	for(int i = 0; i < bytes_length; ++i) {
+		#ifdef _WIN32
+		result = _mm_crc32_u8 (result, bytes[i]);
+		#else
 		result = __crc32b (result, bytes[i]);
-		//NOTE: WINDOWS _mm_crc32_u8
-
+		#endif
 	}
 	return result;
 }
@@ -988,8 +994,12 @@ uint32_t get_crc32(char *bytes, size_t bytes_length) {
 int get_crc32_for_string(char *string_nullterminated) {
 	int result = 0;
 	while(*string_nullterminated) {
+		#ifdef _WIN32
+		result = _mm_crc32_u8 (result, *string_nullterminated);
+		#else
 		result = __crc32b (result, *string_nullterminated);
-		//NOTE: WINDOWS _mm_crc32_u8
+		#endif
+		
 		string_nullterminated++;
 	}
 	return result;

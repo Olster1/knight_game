@@ -1,4 +1,10 @@
+#ifdef _WIN32
+#include "../../libs/GLAD/glad.h"
+#include "../../libs/GLAD/glad.c"
+#include <GL/gl.h>
+#else 
 #include <OpenGL/gl3.h>
+#endif
 #include "./opengl_shaders.cpp"
 
 // NOTE: Each location index in a vertex attribute index - i.e. 4 floats. that's why for matrix we skip 4 values
@@ -500,8 +506,14 @@ ModelBuffer generateVertexBuffer(Vertex *triangleData, int vertexCount, unsigned
     return result;
 }
 
-static uint backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
+static void backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
     r->window_hwnd = hwnd;
+
+#ifdef _WIN32
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        fprintf(stderr, "Failed to initialize GLAD\n");
+    }
+#endif
 
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -559,8 +571,6 @@ static uint backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
 		global_white_texture = platform_loadFromFileToGPU("../white_texture.png").handle;
 	}
 #endif
-
-    return 0;
 }
 
 GLuint OpenglGetTextureHandle(Texture *texture) {

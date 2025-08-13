@@ -1,6 +1,11 @@
 #include <assert.h>
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
-// #include <SDL2_image/SDL_image.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <time.h>
+#endif
+
 #include <cstdio>
 #include <map>
 #include <cstdio>
@@ -54,11 +59,15 @@ static void platform_free_memory(void *data)
 
 }
 
+#ifdef _WIN32
+
+#else 
 #include <unistd.h>
 static u64 platform_get_memory_page_size() {
     long pagesize = sysconf(_SC_PAGE_SIZE);
     return pagesize;
 }
+#endif
 
 static char *platform_openFileDialog() {
     char const * result = tinyfd_openFileDialog (
@@ -84,9 +93,18 @@ static char *platform_saveFileDialog() {
 }
 
 
+#ifdef _WIN32
+    // Windows-specific code
+    #include <windows.h>
+static void *platform_alloc_memory_pages(size_t size) {
+    void *result = malloc(size);
+    memset(result, 0, size);
+    return result;
+}
 
-#include <sys/mman.h>
-//NOTE: Used by the game layer
+#else
+    // POSIX (macOS, Linux, etc.)
+    #include <sys/mman.h>
 static void *platform_alloc_memory_pages(size_t size) {
     u64 page_size = platform_get_memory_page_size();
 
@@ -106,6 +124,8 @@ static void *platform_alloc_memory_pages(size_t size) {
 
     return result;
 }
+
+#endif
 
 static u8 *platform_realloc_memory(void *src, u32 bytesToMove, size_t sizeToAlloc) {
     u8 *result = (u8 *)platform_alloc_memory(sizeToAlloc, true);

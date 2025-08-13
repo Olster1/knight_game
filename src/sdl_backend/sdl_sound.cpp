@@ -61,7 +61,7 @@ SDL_AUDIO_CALLBACK(audioCallback) {
 
         if(sound->active) {
             int samples = stb_vorbis_get_samples_short_interleaved(sound->stream, AUDIO_STEREO, oggBuffer, totalSamples);
-            samples*=AUDIO_STEREO;
+            samples *= AUDIO_STEREO;
 
             //NOTE: This is the Audio Mixer - it sould do everything in float then sample down
             for(int i = 0; i < samples; i++) {
@@ -72,7 +72,6 @@ SDL_AUDIO_CALLBACK(audioCallback) {
                 mixerBuffer[i] = a + b;
             }
 
-            free(oggBuffer);
           
             if(samples == 0) {
                 if(sound->nextSound) {
@@ -80,8 +79,15 @@ SDL_AUDIO_CALLBACK(audioCallback) {
                     sound->active = false;
                     sound->nextSound->active = true;
 
+                    if(sound == sound->nextSound) {
+                        //TODO: Somehow reset the frame pointer back to the start
+                    } else {
+                        stb_vorbis_close(sound->stream);
+                    }
+
                     *sound = *sound->nextSound;
                 } else {
+                    stb_vorbis_close(sound->stream);
                     sound->active = false;
                     //remove from linked list
                     advancePtr = false;
@@ -114,4 +120,5 @@ SDL_AUDIO_CALLBACK(audioCallback) {
     }
 
     free(mixerBuffer);
+    free(oggBuffer);
 }
