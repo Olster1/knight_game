@@ -692,7 +692,7 @@ void drawModels(Renderer *r_, BackendRenderer *r, ModelBuffer *model, uint32_t t
     }
 
     float mappedDayNight = getTimeOfDayValueMapped(r_->dayNightValue);
-    glUniform1f(glGetUniformLocation(shader->handle, "dayNightValue"), lerp(0.2f, 1.0f, make_lerpTValue(mappedDayNight)));
+    glUniform1f(glGetUniformLocation(shader->handle, "dayNightValue"), lerp(0.1f, 1.0f, make_lerpTValue(mappedDayNight)));
     renderCheckError();
 
     bindTexture("diffuse", 1, textureId, shader);

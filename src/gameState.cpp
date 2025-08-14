@@ -141,8 +141,8 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->smokeTextures[2] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff3.png");
 			gameState->smokeTextures[3] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff4.png");
 			gameState->smokeTextures[4] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/puff5.png");
+			gameState->fireTextures[0] = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/puffs/fire.png");
 			
-
 			gameState->pressStartTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/press_start.png");
 			gameState->titleScreenWordsTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/ui/title.png");
 			gameState->backgroundTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/background.png");

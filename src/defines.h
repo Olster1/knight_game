@@ -13,6 +13,6 @@
 #define CHUNK_DIM 16
 #define CHUNK_REVEAL_MARGIN CHUNK_DIM
 #define RENDER_DISTANCE 3
-#define DAYLIGHT_SPEED (1.0f/(60.0f*24.0f))
+#define DAYLIGHT_SPEED (1.0f/(1.0f*24.0f)) //(1.0f/(60.0f*24.0f))
 #define MAX_FADE_TIME 3
 

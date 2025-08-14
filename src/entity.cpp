@@ -158,34 +158,32 @@ int getNewOrReuseParticler(Entity *e, EntityFlag type, ParticlerParent *parent) 
     return index;
 }
 
-// void entityCatchFire(GameState *state, Entity *e, float3 spawnArea) {
-//     if(e->fireTimer) {
-//         int pEntIndex = getNewOrReuseParticler(e, ENTITY_ON_FIRE, &state->particlers);
-//         if(pEntIndex >= 0) {
-//             float3 particleP = e->pos;
-//             particleP.y += 1.5f;
+void entityCatchFire(GameState *state, Entity *e, float3 spawnArea) {
+    if(e->fireTimer <= 0) {
+        int pEntIndex = getNewOrReuseParticler(e, ENTITY_ON_FIRE, &state->particlers);
+        if(pEntIndex >= 0) {
+            float3 particleP = e->pos;
+            particleP.y += 1.5f;
 
-//             Particler *p = getNewParticleSystem(&state->particlers, particleP, (TextureHandle *)global_white_texture, spawnArea, make_float4(0, 0, 1, 1), 100);
-//             if(p) {
-//                 addColorToParticler(p, make_float4(1.0, 0.9, 0.6, 0.0));
-//                 addColorToParticler(p, make_float4(1.0, 0.5, 0.1, 0.8));
-//                 addColorToParticler(p, make_float4(0.6, 0.1, 0.05, 0.5));
-//                 addColorToParticler(p, make_float4(0.2, 0.2, 0.2, 0.0));
+            Particler *p = getNewParticleSystem(&state->particlers, particleP, state->fireTextures, arrayCount(state->fireTextures), spawnArea, 5);
+            if(p) {
+                addColorToParticler(p, make_float4(1.0, 1.0, 1.0, 0.8));
+                addColorToParticler(p, make_float4(1, 1, 1, 0.0));
 
-//                 p->pattern.randomSize = make_float2(0.3f, 1.0f);
-//                 p->pattern.dpMargin = 0.8f;
-//                 p->pattern.speed = 2.0f;
+                p->pattern.randomSize = make_float2(1.0f, 1.1f);
+                p->pattern.dpMargin = 0.8f;
+                p->pattern.speed = 2.0f;
 
-//                 p->flags |= ENTITY_ON_FIRE; //NOTE: Tag it as a 'fire' particle system to check in the entity update code
+                p->flags |= ENTITY_ON_FIRE; //NOTE: Tag it as a 'fire' particle system to check in the entity update code
 
-//                 e->particlers[pEntIndex] = p;
-//                 e->particlerIds[pEntIndex] = p->id;
-//                 e->flags |= ENTITY_ON_FIRE;
-//                 e->fireTimer = 0;
-//             }
-//         }
-//     }
-// }
+                e->particlers[pEntIndex] = p;
+                e->particlerIds[pEntIndex] = p->id;
+                e->flags |= ENTITY_ON_FIRE;
+                e->fireTimer = 0;
+            }
+        }
+    }
+}
 
 
 void entityRenderSelected(GameState *state, Entity *e) {
@@ -218,7 +216,7 @@ Entity *addGhostEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_GHOST;
-        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT | ENTITY_ATTACK_PLAYER | ENTITY_CAN_BE_ATTACKED | ENTITY_LIGHT_COMPONENT;
+        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT | ENTITY_ATTACK_PLAYER | ENTITY_CAN_BE_ATTACKED | ENTITY_LIGHT_COMPONENT | ENTITY_CATCH_FIRE_IN_DAY;
         e->offsetP.y = 0.16; 
         e->scale = make_float3(3, 3, 1);
         easyAnimation_initController(&e->animationController);
@@ -263,12 +261,14 @@ Entity *addManEntity(GameState *state, float3 worldP) {
     Entity *e = makeNewEntity(state, worldP);
     if(e) {
         e->type = ENTITY_MAN;
-        e->flags |= ENTITY_CAN_WALK;
+        e->flags |= ENTITY_CAN_WALK | ENTITY_SHOW_DAMAGE_SPLAT | ENTITY_CAN_BE_ATTACKED;
         e->offsetP.y = 0.16; //NOTE: Fraction of the scale
         float scaleFloat = 1.0f;
         e->scale = make_float3(scaleFloat*1.11f, scaleFloat*2.5f, 1);
         easyAnimation_initController(&e->animationController);
 		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &state->manAnimations.idle, 0.08f);
+
+        // entityCatchFire(state, e, make_float3(0.8f, 0.8f, 0));
     }
     return e;
 }

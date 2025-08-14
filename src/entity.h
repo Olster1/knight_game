@@ -11,6 +11,8 @@ enum EntityFlag {
     ENTITY_ATTACK_PLAYER = 1 << 8,
     ENTITY_CAN_BE_ATTACKED = 1 << 9,
     ENTITY_GO_TRANSPARENT_FOR_PLAYER = 1 << 10,
+    ENTITY_CATCH_FIRE_IN_DAY = 1 << 11,
+    
 };
 
 #define MY_PICKUP_ITEM_TYPE(FUNC) \
@@ -172,6 +174,7 @@ struct Entity {
     int health;
     float homeDistance;
     float attackCooldown;
+    float fireHurtTimer;
     float skeletonCountdown;
     float3 lightColor;
 

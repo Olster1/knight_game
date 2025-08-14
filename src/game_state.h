@@ -188,6 +188,7 @@ typedef struct {
 	Texture titleScreenWordsTexture;
 	 
 	Texture smokeTextures[5];
+	Texture fireTextures[1];
 	Texture splatTexture;
 	Texture inventoryTexture;
 

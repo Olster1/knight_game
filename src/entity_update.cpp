@@ -297,8 +297,34 @@ static float3 roundToGridBoard(float3 in, float tileSize) {
     return result;
 }
 
-void pushEntityLight(GameState *gameState, Entity *e, float dt) {
-    if(hasEntityFlag(e, ENTITY_LIGHT_COMPONENT)) {
+void hurtEntity(GameState *gameState, Entity *entity, int damage) {
+    entity->health -= damage;
+    if(entity->flags & ENTITY_SHOW_DAMAGE_SPLAT) {
+
+        DamageSplat *d = getDamageSplat(gameState, entity);
+
+        if(d) {
+            d->damage = damage;
+        }
+    }
+
+    if(entity->health <= 0) {
+        if(entity->type == ENTITY_TEMPLER_KNIGHT) {
+            templerKnightDie(gameState, entity);
+        } else if(entity->type == ENTITY_TREE) {
+            treeDie(gameState, entity);
+        } else if(entity->type == ENTITY_BEAR) {
+            bearDie(gameState, entity);
+        } else if(entity->type == ENTITY_GHOST) {
+            ghostDie(gameState, entity);
+        } else if(entity->type == ENTITY_MAN) {
+            playerDie(gameState,entity);
+        } 
+    }
+}
+
+void pushEntityLight(GameState *gameState, Entity *e, float dt, bool overrideLight = false) {
+    if(hasEntityFlag(e, ENTITY_LIGHT_COMPONENT) || overrideLight) {
         float3 worldPos = e->pos;
         //NOTE: Update the flicker
         e->perlinNoiseLight += dt;
@@ -316,7 +342,7 @@ void pushEntityLight(GameState *gameState, Entity *e, float dt) {
         viewPos.y -= gameState->cameraPos.y;
 
         //NOTE: Push light
-        pushGameLight(&gameState->renderer, viewPos, e->lightColor, 1);
+        pushGameLight(&gameState->renderer, viewPos, scale_float3(1, e->lightColor), 1);
     }
 }
 
@@ -390,6 +416,84 @@ void updateEntityMovement(GameState *gameState, Entity *e, float dt) {
     }
 }
 
+bool isDayTime(GameState *gameState) {
+    return (gameState->renderer.dayNightValue > 0.25f && gameState->renderer.dayNightValue < 0.75f);
+}
+
+void checkIfShouldCatchFireInDay(GameState *gameState, Entity *e, float dt) {
+    if((e->flags & ENTITY_CATCH_FIRE_IN_DAY) && isDayTime(gameState)) {
+        entityCatchFire(gameState, e, make_float3(0.8f, 0.8f, 0));
+    }
+}
+
+void updateEntityIfOnFire(GameState *gameState, Entity *e, float dt) {
+    if(e->flags & ENTITY_ON_FIRE) {
+        if(!(e->flags & ENTITY_LIGHT_COMPONENT)) {
+            e->lightColor = make_float3(1, 0, 0);
+            pushEntityLight(gameState, e, dt, true);
+        }
+        if(e->fireTimer >= 0) {
+            e->fireTimer += dt;
+
+            Particler *p = 0;
+
+            for(int i = 0; i < e->particlerCount && !p; i++) {
+                Particler *pTemp = e->particlers[i];
+                if(pTemp->flags & ENTITY_ON_FIRE) {
+                    assert(pTemp->id.id == e->particlerIds[i].id);
+                    {
+                        p = pTemp;
+                        break;
+                    }
+                }
+            }
+            
+            if(p) {
+                //NOTE: Reset the lifespan so it keeps going
+                resetParticlerLife(p);
+                updateParticlerWorldPosition(p, e->pos);
+            }
+
+            if(e->flags & ENTITY_CAN_BE_ATTACKED) {
+                e->fireHurtTimer -= dt;
+                if(e->fireHurtTimer <= 0) {
+                    e->fireHurtTimer = 1;
+                    hurtEntity(gameState, e, 3);
+                }
+            }
+
+            float burnTime = 0;
+
+            if(e->flags & ENTITY_CATCH_FIRE_IN_DAY) {
+                 if(isDayTime(gameState)) {
+                    burnTime = -1;
+                } else {
+                    burnTime = 0.5f;
+                }
+            } else {
+                burnTime = 5;
+            }
+
+            if(e->fireTimer >= burnTime && burnTime != -1) {
+                e->fireTimer = -1; //NOTE: Stop burning
+                //NOTE: Stop Particle system
+                p->lifeAt = p->lifespan;
+
+                p->flags &= ~ENTITY_ON_FIRE;
+
+                // easyAnimation_emptyAnimationContoller(&e->animationController, &gameState->animationState.animationItemFreeListPtr);
+                // if(e->type == ENTITY_CASTLE) {
+                //     easyAnimation_addAnimationToController(&e->animationController, &gameState->animationState.animationItemFreeListPtr, &gameState->castleBurntAnimation, 0.08f);
+                // } else if(e->type == ENTITY_HOUSE) {
+                //     easyAnimation_addAnimationToController(&e->animationController, &gameState->animationState.animationItemFreeListPtr, &gameState->houseBurntAnimation, 0.08f);
+                // } else {
+                //     assert(false);
+                // }
+            }
+        }
+    }
+}
+
 void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt, float3 mouseWorldP) {
     DEBUG_TIME_BLOCK();
     if(!(e->flags & ENTITY_ACTIVE)) {
@@ -402,6 +506,10 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
     refreshParticlers(gameState, e);
 
    updateEntityMovement(gameState, e, dt);
+
+   checkIfShouldCatchFireInDay(gameState, e, dt);
+
+   updateEntityIfOnFire(gameState, e, dt);
 
     if(e->attackCooldown > 0) {
         e->attackCooldown -= dt;
@@ -416,17 +524,12 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
 
         if(float2_magnitude(minus_float2(gameState->player->pos.xy, e->pos.xy)) < 1 && e->attackCooldown <= 0) {
             float damage = random_between_int(1, 4);
-            gameState->player->health -= damage;
 
-            if(gameState->player->health <= 0 && gameState->targetGameMode != GAME_GAMEOVER_MODE) {
-                playerDie(gameState, gameState->player);
+            if(e->flags & ENTITY_ON_FIRE) {
+                entityCatchFire(gameState, gameState->player, make_float3(0.8f, 0.8f, 0));
             }
 
-            DamageSplat *d = getDamageSplat(gameState, gameState->player);
-
-            if(d) {
-                d->damage = damage;
-            }
+            hurtEntity(gameState, gameState->player, damage);
 
             e->attackCooldown = 1;
         }
@@ -464,32 +567,9 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
             if(e->attackCooldown <= 0 && (attackEntity->flags & ENTITY_CAN_BE_ATTACKED) && easyAnimation_getCurrentAnimation(&attackEntity->animationController, &attackEntity->animations->idle)) {
 
                 float damage = random_between_int(1, 4);
-                attackEntity->health -= damage;
-
                 e->attackCooldown = 1;
 
-                if(attackEntity->flags & ENTITY_SHOW_DAMAGE_SPLAT) {
-
-                    DamageSplat *d = getDamageSplat(gameState, attackEntity);
-
-                    if(d) {
-                        d->damage = damage;
-                    }
-                }
-
-                if(attackEntity->health <= 0) {
-
-                    if(attackEntity->type == ENTITY_TEMPLER_KNIGHT) {
-                        templerKnightDie(gameState, attackEntity);
-                    } else if(attackEntity->type == ENTITY_TREE) {
-                        treeDie(gameState, attackEntity);
-                    } else if(attackEntity->type == ENTITY_BEAR) {
-                        bearDie(gameState, attackEntity);
-                    } else if(attackEntity->type == ENTITY_GHOST) {
-                        ghostDie(gameState, attackEntity);
-                    } 
-                    
-                }
+                hurtEntity(gameState, attackEntity, damage);
             }
         }
         gameState->selectedEntityCount = 0;

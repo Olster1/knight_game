@@ -1,7 +1,9 @@
 void playerDie(GameState *gameState, Entity *entity) {
-    gameState->gameModeFadeTimer = MAX_FADE_TIME;
-    gameState->gameModeFadeDirection = -1; //NOTE: Fade Out
-    gameState->targetGameMode = GAME_GAMEOVER_MODE;
+    if(gameState->targetGameMode != GAME_GAMEOVER_MODE) {
+        gameState->gameModeFadeTimer = MAX_FADE_TIME;
+        gameState->gameModeFadeDirection = -1; //NOTE: Fade Out
+        gameState->targetGameMode = GAME_GAMEOVER_MODE;
+    }
 }
 
 void bearDie(GameState *gameState, Entity *entity) {

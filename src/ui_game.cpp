@@ -86,6 +86,23 @@ void drawScrollText(char *text, GameState *gameState, Renderer *renderer, float2
     draw_text(renderer, &gameState->pixelFont, text, pos.x - bScale.x*0.5f, pos.y + bScale.y*0.5f, 0.1, make_float4(0, 0, 0, 1)); 
 }
 
+char *convertHoursToString(double hours) {
+    int wholeHour = (int)floor(hours);
+    double fraction = hours - wholeHour;
+
+    // Convert fractional part to minutes
+    int minutes = (int)round(fraction * 60);
+
+    // Convert to 12-hour format
+    int hour12 = wholeHour % 12;
+    if (hour12 == 0) hour12 = 12;
+
+    // Determine AM or PM
+    const char *period = (wholeHour < 12) ? "am" : "pm";
+
+    return easy_createString_printf(&globalPerFrameArena, "%d%s", hour12, period);
+}
+
 void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float windowWidth, float windowHeight, float2 mouseP_01){
 	DEBUG_TIME_BLOCK();
 
@@ -153,6 +170,24 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
         draw_text(renderer, &gameState->pixelFont, gameState->currentItemInfo.title, pos.x + 0.5f*offset.x, pos.y - 0.5f*offset.y, fontSize, make_float4(0, 0, 0, 1)); 
         draw_text(renderer, &gameState->font, gameState->currentItemInfo.description, pos.x + 0.5f*offset.x, (pos.y - get_scale_rect2f(boundsTitle).y) - 0.5f*offset.y, fontSizeDesc, make_float4(0, 0, 0, 1), marginX); 
     }
+
+    //NOTE: Draw the time of day clock
+    {   
+        char *text = convertHoursToString(renderer->dayNightValue*24);
+        Rect2f bounds = getTextBounds(renderer, &gameState->pixelFont, text, 0, 0, 0.1); 
+        float2 scale = get_scale_rect2f(bounds);
+        
+        float2 pos = make_float2(0.5f*scale.x, 0.5f*scale.y);
+        float fontSize = 0.1;
+
+        float2 pos1 = getUiPosition(make_float2(0, 0), UI_ANCHOR_BOTTOM_RIGHT, pos, resolution);
+        pushShader(renderer, &pixelArtShader);
+        pushTexture(renderer, global_white_texture, make_float3(pos1.x, pos1.y, UI_Z_POS), scale, make_float4(0.769, 0.643, 0.518, 1), make_float4(0, 0, 1, 1));
+        pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_BOTTOM_RIGHT, pos, resolution);
+        pushShader(renderer, &sdfFontShader);
+        draw_text(renderer, &gameState->pixelFont, text, pos.x - 0.5f*scale.x, pos.y + 0.5f*scale.y, fontSize, make_float4(0, 0, 0, 1)); 
+    }
+
 
     {
         float3 mouseP = make_float3(mousex, mousey, UI_Z_POS);
