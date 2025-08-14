@@ -8,6 +8,8 @@ typedef struct {
     int xoffset;
     int yoffset;
 
+    int xadvance;  
+
     int width;
     int height;
 
@@ -34,6 +36,9 @@ typedef struct FontSheet {
 } FontSheet;
 
 typedef struct {
+    float originalScaleFactor;
+    stbtt_fontinfo *fontInfo;
+
     char *fileName;
     int fontHeight;
     FontSheet *sheets;
@@ -49,19 +54,12 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
     sheet->next = 0;
     sheet->glyphCount = 0;
     
-    void *contents = 0;
-    size_t contentsSize = 0; 
-    Platform_LoadEntireFile_utf8(font->fileName, &contents, &contentsSize);
-
-    //NOTE(ollie): This stores all the info about the font
-    stbtt_fontinfo *fontInfo = (stbtt_fontinfo *)platform_alloc_memory(sizeof(stbtt_fontinfo), true);
-    
-    //NOTE(ollie): Fill out the font info
-    stbtt_InitFont(fontInfo, (const unsigned char *)contents, 0);
     
     //NOTE(ollie): Get the 'scale' for the max pixel height 
     float maxHeightForFontInPixels = 32;//pixels
-    float scale = stbtt_ScaleForPixelHeight(fontInfo, maxHeightForFontInPixels);
+    float scale = stbtt_ScaleForPixelHeight(font->fontInfo, maxHeightForFontInPixels);
+
+    font->originalScaleFactor = scale;
     
     //NOTE(ollie): Scale the padding around the glyph proportional to the size of the glyph
     s32 padding = (s32)(maxHeightForFontInPixels / 3);
@@ -71,16 +69,6 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
     float pixel_dist_scale = (float)onedge_value/(float)padding;
 
     font->fontHeight = maxHeightForFontInPixels;
-    
-    ///////////////////////************ Kerning Table *************////////////////////
-    // //NOTE(ollie): Get the kerning table length i.e. number of entries
-    // int  kerningTableLength = stbtt_GetKerningTableLength(fontInfo);
-    
-    // //NOTE(ollie): Allocate kerning table
-    // stbtt_kerningentry* kerningTable = pushArray(&globalPerFrameArena, kerningTableLength, stbtt_kerningentry);
-    
-    // //NOTE(ollie): Fill out the table
-    // stbtt_GetKerningTable(fontInfo, kerningTable, kerningTableLength);
 
     u32 maxWidth = 0;
     u32 maxHeight = 0;
@@ -99,7 +87,7 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
 
         assert((endChar - firstChar) <= 256);
         
-        u8 *data = stbtt_GetCodepointSDF(fontInfo, scale, codeIndex, padding, onedge_value, pixel_dist_scale, &width, &height, &xoffset, &yoffset);    
+        u8 *data = stbtt_GetCodepointSDF(font->fontInfo, scale, codeIndex, padding, onedge_value, pixel_dist_scale, &width, &height, &xoffset, &yoffset);    
             
         assert(sheet->glyphCount < MY_MAX_GLYPH_COUNT);
         GlyphInfo *info = &sheet->glyphs[sheet->glyphCount++];
@@ -108,17 +96,21 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
 
         info->unicodePoint = codeIndex;
 
-        
+        info->sdfBitmap = data;
 
-            info->sdfBitmap = data;
+        if(codeIndex == 97) {
+            int h = 0;
+        }
 
-            info->xoffset = xoffset;
-            info->yoffset = yoffset;
-            info->hasTexture = data;
+        int advance, lsb;
+        stbtt_GetCodepointHMetrics(font->fontInfo, codeIndex, &advance, &lsb);
+        info->xadvance = advance*scale;
+        info->xoffset = xoffset;
+        info->yoffset = yoffset;
+        info->hasTexture = data;
 
-            info->width = width;
-            info->height = height;
-            // info->aspectRatio_h_over_w = height / width;
+        info->width = width;
+        info->height = height;
         if(data) {
             { 
                 totalWidth += width;
@@ -153,11 +145,6 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
 
         if(info->sdfBitmap) {
 
-            if(info->unicodePoint == 'w') {
-                int b = 0;
-            }
-            
-
             //NOTE: Calculate uv coords
             info->uvCoords = make_float4((float)xAt / (float)totalWidth, (float)yAt / (float)totalHeight, (float)(xAt + info->width) / (float)totalWidth, (float)(yAt + info->height) / (float)totalHeight);
 
@@ -166,14 +153,11 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
                 for(int x = 0; x < info->width; ++x) {
                     u32 stride = info->width*1;
                     u32 alpha = (u32)info->sdfBitmap[y*stride + x];
-                    // sdfBitmap_32[(y + yAt)*totalWidth + (x + xAt)] = 0x00000000 | (u32)(((u32)alpha) << 24);
                     sdfBitmap_32[(y + yAt)*totalWidth + (x + xAt)] = 0x00000000 | (u32)((alpha) << 24);
                 }
             }
 
             xAt += info->width;
-
-            
             countAt++;
 
             if((countAt % 16) == 0) {
@@ -202,8 +186,6 @@ FontSheet *createFontSheet(Font *font, u32 firstChar, u32 endChar) {
 
     //NOTE(ollie): Release memory from 32bit bitmap
     platform_free_memory(sdfBitmap_32);
-    platform_free_memory(contents);
-    platform_free_memory(fontInfo);
 
     return sheet;
 }
@@ -238,11 +220,21 @@ Font initFont_(char *fileName, int firstChar, int endChar) {
     Font result = {}; 
     result.fileName = fileName;
 
+    void *contents = 0;
+    size_t contentsSize = 0; 
+    Platform_LoadEntireFile_utf8(fileName, &contents, &contentsSize);
+
+    //NOTE(ollie): This stores all the info about the font
+    result.fontInfo = (stbtt_fontinfo *)platform_alloc_memory(sizeof(stbtt_fontinfo), true);
+    
+    //NOTE(ollie): Fill out the font info
+    stbtt_InitFont(result.fontInfo, (const unsigned char *)contents, 0);
+
     result.sheets = createFontSheet(&result, firstChar, endChar);
+
+    platform_free_memory(contents);
     return result;
 }
-
-
 
 Font initFont(char *fileName) {
     Font result = initFont_(fileName, 0, 256); // ASCII 0..256 not inclusive
@@ -272,8 +264,7 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
 
     maxWidth += startX;
 
-    //TODO: The 0.8 is just to get it centered but need to revist it.
-    float yAt = -0.8f*font->fontHeight*fontScale + yAt_;
+    float yAt = -font->fontHeight*fontScale + yAt_;
 
     bool newLine = true;
 
@@ -281,7 +272,8 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
 
     bool parsing = true;
     EasyTokenizer tokenizer = lexBeginParsing(str, EASY_LEX_OPTION_NONE);
-   
+    
+    int roundCount = 0;
     while(parsing) {
          EasyToken token = lexGetNextToken(&tokenizer);
         if(token.type == TOKEN_NULL_TERMINATOR) {
@@ -297,53 +289,45 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
 
             char *at = token.at;
 
+            u32 lastRune = '\0';
+
             while(at < (token.at + token.size)) {
 
-                if((*at == '\n' || xAt >= maxWidth) && token.type != TOKEN_SPACE) {
+                if((*at == '\n' || xAt >= maxWidth) && token.type != TOKEN_SPACE && roundCount < 1) {
                     //NOTE: New line
-                    GlyphInfo g = easyFont_getGlyph(font, 'y');
-                    xAt = startX;
-
-                    if(*at == '\n' && at[1] != '\0') {
-                        char *next = (at + 1);
-                        g = easyFont_getGlyph(font, easyUnicode_utf8_codepoint_To_Utf32_codepoint(&next, false));
-                        float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
-                        xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
-                    }
-                    
                     yAt -= font->fontHeight*fontScale;
                     if(*at == '\n') {
                         at++;
+                        lastRune = '\n';
+                    } else {
+                        roundCount++;
                     }
                     newLine = true;
                 } else {
+                    roundCount = 0;
                     u32 rune = easyUnicode_utf8_codepoint_To_Utf32_codepoint(&at, true);
-
-                    float factor = 1.0f;
 
                     GlyphInfo g = easyFont_getGlyph(font, rune);
 
                     assert(g.unicodePoint == rune);
-
-                    if(rune == ' ') {
-                        g.width = easyFont_getGlyph(font, 'y').width;
-                    }
 
                     if(g.hasTexture) {
 
 
                         float4 color = font_color;//make_float4(0, 0, 0, 1);
                         float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
-                        float offsetY = -0.5f*scale.y;
+                        
 
                         if(newLine) {
-                            xAt = startX - fontScale*g.xoffset + 0.5f*scale.x;
+                            xAt = startX + fontScale*g.xoffset + 0.5f*scale.x;
                         }
 
                         float3 pos = {};
-                        pos.x = xAt + fontScale*g.xoffset;
+                        //NOTE: Because STB font has the sprite at the bottom corner but we render the glyphs in the center, 
+                        //      we offset the position by the width & height;
+                        pos.x = xAt + fontScale*g.xoffset + 0.5f*fontScale*g.width;
                         assert(pos.x >= startX);
-                        pos.y = yAt -fontScale*g.yoffset + offsetY;
+                        pos.y = yAt -fontScale*g.yoffset - 0.5f*g.height*fontScale;
                         pos.z = 0;
 
                         if(renderGlyph) {
@@ -354,8 +338,15 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
                         result = rect2f_union(make_rect2f_center_dim(make_float2(pos.x, pos.y), scale), result);
                     }
 
-                    xAt += (g.width + g.xoffset)*fontScale*factor;
+                    if(lastRune != '\0') {
+                        xAt += fontScale*font->originalScaleFactor*stbtt_GetCodepointKernAdvance(font->fontInfo, lastRune, rune);
+                    }
+
+                    xAt += g.xadvance*fontScale;
                     newLine = false;
+
+                    lastRune = rune;
+                    
                 }
             }
         }

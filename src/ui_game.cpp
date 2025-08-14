@@ -100,6 +100,7 @@ char *convertHoursToString(double hours) {
     // Determine AM or PM
     const char *period = (wholeHour < 12) ? "am" : "pm";
 
+    // return "The quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog";
     return easy_createString_printf(&globalPerFrameArena, "%d%s", hour12, period);
 }
 
@@ -186,6 +187,22 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
         pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_BOTTOM_RIGHT, pos, resolution);
         pushShader(renderer, &sdfFontShader);
         draw_text(renderer, &gameState->pixelFont, text, pos.x - 0.5f*scale.x, pos.y + 0.5f*scale.y, fontSize, make_float4(0, 0, 0, 1)); 
+    }
+
+    {
+        char *t = "Amid clashing clans and brewing unrest, the world teeters on the edge of chaos, with forests scarred by old battles & villages holding their breath";
+         Rect2f bounds = getTextBounds(renderer, &gameState->pixelFont, t, 0, 0, 0.1, 50); 
+        float2 scale = get_scale_rect2f(bounds);
+        
+        float2 pos = make_float2(0.5f*scale.x, 0.5f*scale.y);
+        float fontSize = 0.1;
+        float2 pos1 = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER, pos, resolution);
+        pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER, pos, resolution);
+
+        pushShader(renderer, &pixelArtShader);
+        pushTexture(renderer, global_white_texture, make_float3(pos1.x, pos1.y, UI_Z_POS), scale, make_float4(0.769, 0.643, 0.518, 1), make_float4(0, 0, 1, 1));
+        pushShader(renderer, &sdfFontShader);
+        draw_text(renderer, &gameState->pixelFont, t, pos.x - 0.5f*scale.x, pos.y + 0.5f*scale.y, fontSize, make_float4(0, 0, 0, 1), 50); 
     }
 
 
