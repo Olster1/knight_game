@@ -259,7 +259,8 @@ static inline GlyphInfo easyFont_getGlyph(Font *font, u32 unicodePoint) {
 }
 
 
-static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, bool renderGlyph, float maxWidth = FLT_MAX, bool recursiveChild = false) {
+static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float4 font_color, bool renderGlyph, float maxWidth = FLT_MAX, bool recursiveChild = false, float *lastAlphaCharacter = 0, int lastAlphaCount = 0) {
+    DEBUG_TIME_BLOCK();
     Rect2f result = make_rect2f(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 
     maxWidth += startX;
@@ -272,6 +273,8 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
 
     bool parsing = true;
     EasyTokenizer tokenizer = lexBeginParsing(str, EASY_LEX_OPTION_NONE);
+
+    int runeAt = 0;
     
     int roundCount = 0;
     while(parsing) {
@@ -299,12 +302,14 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
                     if(*at == '\n') {
                         at++;
                         lastRune = '\n';
+                        runeAt++;
                     } else {
                         roundCount++;
                     }
                     newLine = true;
                 } else {
                     roundCount = 0;
+                    
                     u32 rune = easyUnicode_utf8_codepoint_To_Utf32_codepoint(&at, true);
 
                     GlyphInfo g = easyFont_getGlyph(font, rune);
@@ -312,7 +317,6 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
                     assert(g.unicodePoint == rune);
 
                     if(g.hasTexture) {
-
 
                         float4 color = font_color;//make_float4(0, 0, 0, 1);
                         float2 scale = make_float2(g.width*fontScale, g.height*fontScale);
@@ -331,7 +335,12 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
                         pos.z = 0;
 
                         if(renderGlyph) {
-                            pushGlyph(renderer, g.handle, pos, scale, font_color, g.uvCoords);
+                            float4 color = font_color;
+
+                            if(runeAt < lastAlphaCount) {
+                                color.w = lastAlphaCharacter[runeAt];
+                            }
+                            pushGlyph(renderer, g.handle, pos, scale, color, g.uvCoords);
                         }
                         
 
@@ -346,7 +355,7 @@ static Rect2f draw_text_(Renderer *renderer, Font *font, char *str, float startX
                     newLine = false;
 
                     lastRune = rune;
-                    
+                    runeAt++;
                 }
             }
         }
@@ -360,4 +369,23 @@ static void draw_text(Renderer *renderer, Font *font, char *str, float startX, f
 
 static Rect2f getTextBounds(Renderer *renderer, Font *font, char *str, float startX, float yAt_, float fontScale, float maxWidth = FLT_MAX) {
     return draw_text_(renderer, font, str, startX, yAt_, fontScale, make_float4(1, 1, 1, 0), false, maxWidth);
+}
+
+struct FontWriter {
+    bool active;
+    char *string;
+    int runeAt;
+    int runeCount;
+    float runeAlphaValues[1024];
+};
+
+void startFontWriter(FontWriter *fontWriter, char *string) {
+    easyPlatform_zeroMemory(fontWriter, sizeof(FontWriter));
+
+    assert(string);
+    fontWriter->active = true;
+    fontWriter->string = string;
+    fontWriter->runeCount = easyString_getStringLength_utf8(string);
+    assert(fontWriter->runeCount <= arrayCount(fontWriter->runeAlphaValues));
+    
 }

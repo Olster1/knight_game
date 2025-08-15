@@ -42,7 +42,6 @@ typedef struct EntityDialogNode {
 	//to match the choices
 	EntityDialogNode *next[4];
 
-
 	bool isEndNode; //NOTE: This is for choices so they can end while still sliding the choices back in
  } EntityDialogNode;
 

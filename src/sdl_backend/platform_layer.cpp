@@ -146,17 +146,6 @@ inline u64 EasyTime_GetTimeCount()
     return s;
 }
 
-inline u64 EasyTime_GetSecondsCount() {
-	return (EasyTime_GetTimeCount() / GlobalTimeFrequencyDatum);
-} 
-
-inline float EasyTime_GetSecondsElapsed(u64 CurrentCount, u64 LastCount)
-{
-    u64 Difference = CurrentCount - LastCount;
-    float Seconds = (float)Difference / (float)GlobalTimeFrequencyDatum;
-    
-    return Seconds;
-}
 
 inline float EasyTime_GetMillisecondsElapsed(u64 CurrentCount, u64 LastCount)
 {
@@ -453,22 +442,42 @@ int main(int argc, char **argv) {
         //         window_yAt = (LONG)settings_to_save.window_yAt;
         //     }
         // }
-        
 
+
+#ifdef _WIN32
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        fprintf(stderr, "Failed to initialize GLAD\n");
+    }
+#endif
+
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                            SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
+
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+        
         //Now create the actual window
         global_wndHandle = SDL_CreateWindow("Iron Quest",  SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, flags);
         assert(global_wndHandle);
         SDL_RaiseWindow(global_wndHandle);
     }
     
-    
     //TODO: Change to using memory arena? 
     BackendRenderer *backendRenderer = (BackendRenderer *)platform_alloc_memory(sizeof(BackendRenderer), true); 
+    
     backendRender_init(backendRenderer, global_wndHandle);
 
     global_platformInput.dpi_for_window = GetDpiForWindow();
 
     bool first_frame = true;
+    bool second_frame = false;
 
     //NOTE: Clear the keys states to NONE to start of with
     for(int i = 0; i < arrayCount(global_platformInput.keys); ++i) {
@@ -505,7 +514,17 @@ int main(int argc, char **argv) {
             dt = (float)(currentTimeInSeconds - previousTimeInSeconds);
 
             //NOTE: Round the dt to closest frame boundary for accuracy
-            dt = getBestDt(dt);
+            // dt = getBestDt(dt);
+
+            if(first_frame || second_frame) {
+                if(first_frame) {
+                    second_frame = true;
+                } else {
+                    second_frame = false;
+                }
+                
+                dt = 0;
+            }
         }
 
         //NOTE: Clear the input text buffer to empty
@@ -549,7 +568,6 @@ int main(int argc, char **argv) {
         }
         
         first_frame = false;
-
 
         DEBUG_TIME_BLOCK_FOR_FRAME_END(beginFrameProfiler, global_platformInput.keyStates[PLATFORM_KEY_SPACE].pressedCount > 0);
         DEBUG_TIME_BLOCK_FOR_FRAME_START(beginFrameProfiler, "Per frame");

@@ -176,10 +176,10 @@ static void EasyProfile_DrawGraph(Renderer *renderer, GameState *gameState, Easy
 					float xAt = 0.05*resolution.x;
 					float yAt = resolution.y - 2*gameState->font.fontHeight;
 
-					char *formatString = "Frame Information:\nTotal Milliseconds for frame: %f";
+					char *formatString = "Frame Information:\nTotal Milliseconds for frame: %f\nFPS: %f";
 
 					char frameInfoString[1028];
-					snprintf(frameInfoString, arrayCount(frameInfoString), formatString, state->lookingAtSingleFrame->millisecondsForFrame);
+					snprintf(frameInfoString, arrayCount(frameInfoString), formatString, state->lookingAtSingleFrame->millisecondsForFrame, 1000.0f / state->lookingAtSingleFrame->millisecondsForFrame);
 					
 					draw_text(renderer, &gameState->font, frameInfoString, xAt, yAt, 1, make_float4(0.7, 0.7, 0.7, 1)); 
 
@@ -320,13 +320,13 @@ static void EasyProfile_DrawGraph(Renderer *renderer, GameState *gameState, Easy
 
 							///////////////////////*********** Draw milliseconds of it **************////////////////////
 							char strBuffer[1028] = {};
-							snprintf(strBuffer, arrayCount(strBuffer), "Milliseconds for frame: %fms", frame->millisecondsForFrame);
+							snprintf(strBuffer, arrayCount(strBuffer), "Milliseconds for frame: %fms\nFPS: %f", frame->millisecondsForFrame, 1000.0f / frame->millisecondsForFrame);
 
 							float xAt = easyInput_mouseToResolution_originLeftBottomCorner(mouseP_01, resolution).x;
 							float yAt = easyInput_mouseToResolution_originLeftBottomCorner(mouseP_01, resolution).y + backdropY;
 
 							pushShader(renderer, &sdfFontShader);
-							draw_text(renderer, &gameState->font, strBuffer, 10, 40, 1, make_float4(1, 1, 1 ,1)); 
+							draw_text(renderer, &gameState->font, strBuffer, 10, 80, 1, make_float4(1, 1, 1 ,1)); 
 							////////////////////////////////////////////////////////////////////
 
 							if(global_platformInput.keyStates[PLATFORM_MOUSE_LEFT_BUTTON].pressedCount > 0) {

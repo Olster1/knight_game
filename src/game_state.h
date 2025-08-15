@@ -192,6 +192,8 @@ typedef struct {
 	Texture splatTexture;
 	Texture inventoryTexture;
 
+	FontWriter fontWriter;
+
 	float3 itemInfoPos;
 	ItemInfo currentItemInfo;
 

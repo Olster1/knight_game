@@ -155,7 +155,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 
 			gameState->gameModeFadeTimer = -1;
 			gameState->gameModeState = GAME_PLAY_MODE;
-			
+
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../images/entities/man.png", 32, 72, 1, 0, 0);
 

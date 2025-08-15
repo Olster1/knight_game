@@ -86,6 +86,44 @@ void drawScrollText(char *text, GameState *gameState, Renderer *renderer, float2
     draw_text(renderer, &gameState->pixelFont, text, pos.x - bScale.x*0.5f, pos.y + bScale.y*0.5f, 0.1, make_float4(0, 0, 0, 1)); 
 }
 
+void updateFontWriter(GameState *gameState, FontWriter *fontWriter, Renderer *renderer, float dt, float2 resolution) {
+    DEBUG_TIME_BLOCK();
+    if(fontWriter->active) {
+        
+        Rect2f bounds = getTextBounds(renderer, &gameState->pixelFont, fontWriter->string, 0, 0, 0.1, 50); 
+        float2 scale = get_scale_rect2f(bounds);
+        
+        float2 pos = make_float2(0.5f*scale.x, 0.5f*scale.y);
+        float fontSize = 0.1;
+        float2 pos1 = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER_BOTTOM, pos, resolution);
+        pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER_BOTTOM, pos, resolution);
+
+        pushShader(renderer, &pixelArtShader);
+        pushTexture(renderer, global_white_texture, make_float3(pos1.x, pos1.y, UI_Z_POS), scale, make_float4(0.769, 0.643, 0.518, 1), make_float4(0, 0, 1, 1));
+        pushShader(renderer, &sdfFontShader);
+
+
+        fontWriter->runeAt += 40*dt;
+        for(int i = 0; i < MathMin((int)fontWriter->runeAt, arrayCount(fontWriter->runeAlphaValues)); i++) {
+            fontWriter->runeAlphaValues[i] += 0.5f*dt;
+            if(fontWriter->runeAlphaValues[i] > 1.0f) {
+                fontWriter->runeAlphaValues[i] = 1;
+            }
+        }
+
+    
+        draw_text_(renderer, &gameState->pixelFont, fontWriter->string, pos.x - 0.5f*scale.x, pos.y + 0.5f*scale.y, fontSize, make_float4(0, 0, 0, 1), true, 50, false, fontWriter->runeAlphaValues, arrayCount(fontWriter->runeAlphaValues)); 
+
+        if(global_platformInput.keyStates[PLATFORM_KEY_ENTER].pressedCount > 0) {
+            if(fontWriter->runeAt < fontWriter->runeCount) {
+                fontWriter->runeAt = fontWriter->runeCount;
+            } else {
+                fontWriter->active = false;
+            }
+        }
+    }
+}
+
 char *convertHoursToString(double hours) {
     int wholeHour = (int)floor(hours);
     double fraction = hours - wholeHour;
@@ -122,22 +160,9 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
 
     if(gameState->actionString) {
         char *str = easy_createString_printf(&globalPerFrameArena, gameState->actionString);
-        // drawScrollText(str, gameState, renderer, make_float2(1, 1), UI_ANCHOR_CENTER_BOTTOM, resolution);
+        drawScrollText(str, gameState, renderer, make_float2(1, 1), UI_ANCHOR_CENTER_BOTTOM, resolution);
     }
     gameState->actionString = 0;
-    
-    // {
-    //NOTE: Drawing the time left string
-    //     int sec = (int)(play->maxTurnTime - play->turnTime);
-    //     int min = sec / 60;
-    //     sec -= min*60;
-    
-    //     str = easy_createString_printf(&globalPerFrameArena, "Time Left: %d:%d", min, sec);
-    //     drawScrollText(str, gameState, renderer, make_float2(1, 1), UI_ANCHOR_TOP_LEFT, resolution);
-    // }
-
-
-
     if(gameState->currentItemInfo.title) 
     {
         float3 pos = make_float3(mousex, mousey, UI_Z_POS);
@@ -190,21 +215,8 @@ void drawGameUi(GameState *gameState, Renderer *renderer, float dt, float window
     }
 
     {
-        char *t = "Amid clashing clans and brewing unrest, the world teeters on the edge of chaos, with forests scarred by old battles & villages holding their breath";
-         Rect2f bounds = getTextBounds(renderer, &gameState->pixelFont, t, 0, 0, 0.1, 50); 
-        float2 scale = get_scale_rect2f(bounds);
-        
-        float2 pos = make_float2(0.5f*scale.x, 0.5f*scale.y);
-        float fontSize = 0.1;
-        float2 pos1 = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER, pos, resolution);
-        pos = getUiPosition(make_float2(0, 0), UI_ANCHOR_CENTER, pos, resolution);
-
-        pushShader(renderer, &pixelArtShader);
-        pushTexture(renderer, global_white_texture, make_float3(pos1.x, pos1.y, UI_Z_POS), scale, make_float4(0.769, 0.643, 0.518, 1), make_float4(0, 0, 1, 1));
-        pushShader(renderer, &sdfFontShader);
-        draw_text(renderer, &gameState->pixelFont, t, pos.x - 0.5f*scale.x, pos.y + 0.5f*scale.y, fontSize, make_float4(0, 0, 0, 1), 50); 
+        updateFontWriter(gameState, &gameState->fontWriter,renderer,  dt, resolution);
     }
-
 
     {
         float3 mouseP = make_float3(mousex, mousey, UI_Z_POS);

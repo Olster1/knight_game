@@ -12,10 +12,11 @@
 #include "animation.cpp"
 #include "resize_array.cpp"
 #include "particles.cpp"
+#include "dialog.cpp"
 #include "entity.h"
 #include "tileMap.h"
 #include "editor_gui.h"
-#include "dialog.cpp"
+
 #include "texture_atlas.cpp"
 #include "terrain.hpp"
 #include "board_astar.h"
@@ -121,7 +122,6 @@ static GameState *updateEditor(BackendRenderer *backendRenderer, float dt, float
 
 #if DEBUG_BUILD
 	// drawDebugAndEditorText(gameState, renderer, fauxDimensionX, fauxDimensionY, windowWidth, windowHeight, dt, fovMatrix);
-	
 	EasyProfile_DrawGraph(renderer, gameState, gameState->drawState, dt, windowHeight/windowWidth, mouseP_01);
 #endif
 

@@ -494,6 +494,22 @@ void updateEntityIfOnFire(GameState *gameState, Entity *e, float dt) {
     }
 }
 
+void checkDialogActivate(GameState *gameState, Entity *e) {
+    if(e->dialog) {
+        Entity *player = gameState->player;
+
+        float3 playerPos = convertRealWorldToBlockCoords(gameState->player->pos);
+        float3 ePos = convertRealWorldToBlockCoords(e->pos);
+        if((playerPos.x == ePos.x ||playerPos.x == (ePos.x - 1) || playerPos.x == (ePos.x + 1)) && (playerPos.y == (ePos.y - 1) || playerPos.y == (ePos.y - 2))) {
+            gameState->actionString = "TALK";
+
+            if(global_platformInput.keyStates[PLATFORM_KEY_ENTER].pressedCount > 0) {
+                startFontWriter(&gameState->fontWriter, e->dialog->texts[0]);
+            }
+        }
+    }
+}
+
 void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt, float3 mouseWorldP) {
     DEBUG_TIME_BLOCK();
     if(!(e->flags & ENTITY_ACTIVE)) {
@@ -510,6 +526,8 @@ void updateEntity(GameState *gameState, Renderer *renderer, Entity *e, float dt,
    checkIfShouldCatchFireInDay(gameState, e, dt);
 
    updateEntityIfOnFire(gameState, e, dt);
+
+   checkDialogActivate(gameState, e);
 
     if(e->attackCooldown > 0) {
         e->attackCooldown -= dt;
@@ -819,7 +837,7 @@ void updateAndDrawEntitySelection(GameState *gameState, Renderer *renderer, bool
 					if(e->type == ENTITY_TEMPLER_KNIGHT) {
 						gameState->actionString = "BATTLE KNIGHT";
 					} else if(e->type == ENTITY_TREE && easyAnimation_getCurrentAnimation(&e->animationController, &e->animations->idle)) {
-						gameState->actionString = "CUT TREE";
+						// gameState->actionString = "CUT TREE";
 					}
 
                     gameState->currentItemInfo = getItemInfo(e);
@@ -885,7 +903,6 @@ void updateAndRenderEntities(GameState *gameState, Renderer *renderer, float dt,
 	float2 windowSize = make_float2(windowWidth, windowHeight);
 
 	renderTileMap(gameState, renderer, fovMatrix, windowSize, dt);
-	
 
 	float3 worldMouseP = getMouseWorldP(gameState, windowWidth, windowHeight);
 	float2 worldMousePLvl0 = getMouseWorldPLvl0(gameState, windowWidth, windowHeight);

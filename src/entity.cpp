@@ -297,6 +297,8 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
         e->offsetP.y = 0.3; //NOTE: Fraction of the scale
         e->scale = make_float3(6.419f, 10, 1);
 
+        e->dialog = state->dialogs.houseDialog;
+
         e->animations = &state->ashTreeAnimations[random_between_int(0, arrayCount(state->ashTreeAnimations))];
         easyAnimation_initController(&e->animationController);
 		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &e->animations->idle, 0.08f);

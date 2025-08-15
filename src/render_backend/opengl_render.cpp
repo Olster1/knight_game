@@ -509,25 +509,6 @@ ModelBuffer generateVertexBuffer(Vertex *triangleData, int vertexCount, unsigned
 static void backendRender_init(BackendRenderer *r, SDL_Window *hwnd) {
     r->window_hwnd = hwnd;
 
-#ifdef _WIN32
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-        fprintf(stderr, "Failed to initialize GLAD\n");
-    }
-#endif
-
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                        SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
     r->renderContext = SDL_GL_CreateContext(hwnd);
 
     if(r->renderContext) {
@@ -692,7 +673,7 @@ void drawModels(Renderer *r_, BackendRenderer *r, ModelBuffer *model, uint32_t t
     }
 
     float mappedDayNight = getTimeOfDayValueMapped(r_->dayNightValue);
-    glUniform1f(glGetUniformLocation(shader->handle, "dayNightValue"), lerp(0.1f, 1.0f, make_lerpTValue(mappedDayNight)));
+    glUniform1f(glGetUniformLocation(shader->handle, "dayNightValue"), lerp(1.0f, 1.0f, make_lerpTValue(mappedDayNight)));
     renderCheckError();
 
     bindTexture("diffuse", 1, textureId, shader);
