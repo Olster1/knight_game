@@ -380,8 +380,8 @@ void initPlayerBoard(GameState *gameState) {
 
     addManEntity(gameState, p);
     assert(tileIsOccupied(gameState, p));
-    addPickupItem(gameState, plus_float3(p, make_float3(2, 0, 0)), PICKUP_ITEM_SKINNING_KNIFE);
-    addPickupItem(gameState, plus_float3(p, make_float3(4, 0, 0)), PICKUP_ITEM_BEAR_PELT);
+    // addPickupItem(gameState, plus_float3(p, make_float3(2, 0, 0)), PICKUP_ITEM_SKINNING_KNIFE);
+    // addPickupItem(gameState, plus_float3(p, make_float3(4, 0, 0)), PICKUP_ITEM_BEAR_PELT);
 
     // gameState->placeItem = PICKUP_ITEM_BEAR_TENT;
 

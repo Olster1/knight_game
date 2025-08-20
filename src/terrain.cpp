@@ -217,6 +217,30 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP);
 Entity *addAlderTreeEntity(GameState *state, float3 worldP);
 Entity *addBearEntity(GameState *state, float3 worldP);
 Entity *addGhostEntity(GameState *state, float3 worldP);
+Entity *addPlantEntity(GameState *state, float3 worldP, DefaultEntityAnimations *animations);
+
+
+u32 addPlantIfHasPlant(GameState *state, int worldX, int worldY) {
+    u32 flags = TILE_FLAG_WALKABLE;
+    DEBUG_TIME_BLOCK()
+    WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 1, 2);
+
+    if(info.valid) {
+        flags = 0;
+        float3 worldP = make_float3(worldX, worldY, 0);
+        DefaultEntityAnimations *animations = 0;
+        if(info.randomValue < 0.5f) {
+            animations = &state->dock;
+        } else if(info.randomValue < 1.0f) {
+            animations = &state->nettle;
+        }
+        if(animations) {
+            addPlantEntity(state, worldP, animations);
+        }
+    }
+    return flags;
+}
+
 
 u32 addTreeIfHasTree(GameState *state, int worldX, int worldY) {
     u32 flags = TILE_FLAG_WALKABLE;
@@ -224,12 +248,24 @@ u32 addTreeIfHasTree(GameState *state, int worldX, int worldY) {
     WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 8, 7);
 
     if(info.valid) {
+        flags = 0;
+        float3 worldP = make_float3(worldX, worldY, 0);
         if(info.randomValue < 0.3f) {
-            addAshTreeEntity(state, make_float3(worldX, worldY, 0));
-            flags = 0;
-        } else if(info.randomValue < 1) {
-            addAlderTreeEntity(state, make_float3(worldX, worldY, 0));
-            flags = 0;
+            addAshTreeEntity(state, worldP);
+        } else if(info.randomValue < 0.7f) {
+            addAlderTreeEntity(state, worldP);
+        } else if(info.randomValue < 1.0f) {
+            WorldGenerationPositionInfo info = isCellPosition(worldX, worldY, 3, 1);
+            DefaultEntityAnimations *animations = 0;
+            if(info.randomValue < 0.5f) {
+                animations = &state->dock;
+            } else if(info.randomValue < 1.0f) {
+                animations = &state->nettle;
+            }
+            if(animations) {
+                addPlantEntity(state, worldP, animations);
+            }
+                
         }
     }
     return flags;
@@ -317,13 +353,22 @@ void fillChunk(GameState *gameState, LightingOffsets *lightingOffsets, Animation
             }
             if(hasGhostEntity(worldX, worldY)) {
                 assert(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
-                addGhostEntity(gameState, make_float3(worldX, worldY, 0));
-                assert(tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
+                Entity *e = addGhostEntity(gameState, make_float3(worldX, worldY, 0));
+                if(e) {
+                    assert(tileIsOccupied(gameState, make_float3(worldX, worldY, 0)));
+                }
+                
             }
 
             if(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0))){
                 flags = addTreeIfHasTree(gameState, worldX, worldY);
-            }
+            } 
+
+            if(!tileIsOccupied(gameState, make_float3(worldX, worldY, 0))){
+                flags = addPlantIfHasPlant(gameState, worldX, worldY);
+            } 
+
+            
 
             tile->flags |= flags;
             

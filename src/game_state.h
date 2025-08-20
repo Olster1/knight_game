@@ -180,6 +180,9 @@ typedef struct {
 	DefaultEntityAnimations bearTent;
 	DefaultEntityAnimations ghostAnimations;
 
+	DefaultEntityAnimations dock;
+	DefaultEntityAnimations nettle;
+
 	PickupItemType placeItem;
 	
 	Inventory inventory;

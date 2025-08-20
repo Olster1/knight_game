@@ -154,7 +154,7 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			gameState->inventoryTexture = backendRenderer_loadFromFileToGPU(backendRenderer, "../images/entities/inventory.png");
 
 			gameState->gameModeFadeTimer = -1;
-			gameState->gameModeState = GAME_PLAY_MODE;
+			gameState->gameModeState = GAME_START_SCREEN_MODE;
 
 		
 			loadImageStripXY(&gameState->manAnimations.idle, backendRenderer, "../images/entities/man.png", 32, 72, 1, 0, 0);
@@ -184,6 +184,9 @@ void initGameState(GameState *gameState, BackendRenderer *backendRenderer) {
 			loadImageStripXY(&gameState->ashTreeAnimations[3].fallen, backendRenderer, "../images/entities/fallentree.png", 162, 104, 1, 0, 0);
 
 			loadImageStripXY(&gameState->templerKnightAnimations.idle, backendRenderer, "../images/entities/knight.png", 32, 72, 1, 0, 0);
+
+			loadImageStripXY(&gameState->dock.idle, backendRenderer, "../images/entities/plants/dock_single.png", 24, 26, 1, 0, 0);
+			loadImageStrip(&gameState->nettle.idle, backendRenderer, "../images/entities/plants/Nettle3.png", 32);
 
 			loadImageStripXY(&gameState->bearAnimations.idle, backendRenderer, "../images/entities/bear/bear.png", 73, 73, 1, 0, 0);
 			loadImageStripXY(&gameState->bearAnimations.dead, backendRenderer, "../images/entities/bear/beardown.png", 128, 128, 1, 0, 0);

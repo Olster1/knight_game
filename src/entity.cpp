@@ -306,6 +306,27 @@ Entity *addAshTreeEntity(GameState *state, float3 worldP) {
     return e;
 }
 
+Entity *addPlantEntity(GameState *state, float3 worldP, DefaultEntityAnimations *animations) {
+    Entity *e = makeNewEntity(state, worldP);
+    if(e) {
+        e->type = ENTITY_TREE;
+        e->flags |= ENTITY_CAN_BE_ATTACKED;
+        e->offsetP.y = 0.0; //NOTE: Fraction of the scale
+        e->scale = make_float3(1, 2, 1);
+
+        e->animations = animations;
+        easyAnimation_initController(&e->animationController);
+
+        float speed = 0.08f;
+
+        if(animations == &state->nettle) {
+            speed = 1;
+        }
+		easyAnimation_addAnimationToController(&e->animationController, &state->animationState.animationItemFreeListPtr, &animations->idle, speed);
+    }
+    return e;
+}
+
 DefaultEntityAnimations *getAnimationForPickupItem(GameState *state, PickupItemType pickupType) {
     DefaultEntityAnimations *result = 0;
     if(pickupType == PICKUP_ITEM_BEAR_PELT) {
